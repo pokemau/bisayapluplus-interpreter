@@ -6,6 +6,7 @@
 char get_char(Scanner *self) {
     return self->source->data[self->current++];
 }
+
 void add_token(TokenType type) {
 
 }

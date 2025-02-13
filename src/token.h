@@ -2,7 +2,7 @@
 #define _TOKEN_H_
 
 
-enum TokenType {
+typedef enum TokenType {
     // Single-character tokens.
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
     COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
@@ -28,7 +28,7 @@ enum TokenType {
 
     // EOF
     EOFILE
-};
+} TokenType;
 
 struct Token {
     int line;
