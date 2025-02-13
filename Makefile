@@ -6,9 +6,9 @@ SRC = $(wildcard src/**/*.c) $(wildcard src/*.c) $(wildcard src/**/**/*.c) $(wil
 OBJ = $(SRC:.c=.o)
 BIN = bin
 
-.PHONY: all clean dirs libs run bisaya++
+.PHONY: all clean dirs run bisaya++
 
-all: dirs libs bisaya++
+all: dirs bisaya++
 
 dirs:
 	mkdir -p ./$(BIN)
@@ -18,7 +18,7 @@ run: all
 
 bisaya++: $(OBJ)
 	$(CC) -o $(BIN)/bisaya++ $^ $(LDFLAGS)
-	./$(BIN)/bisaya++
+#	./$(BIN)/bisaya++
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
