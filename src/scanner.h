@@ -3,8 +3,6 @@
 
 #include "token.h"
 
-#include <stdlib.h>
-
 typedef struct scanner_source {
     long len;
     const char *data;
@@ -20,6 +18,6 @@ typedef struct Scanner {
 
 Scanner scanner_create(scanner_source *source);
 
-void scanner_token(Scanner *self);
+void scanner_scan_tokens(Scanner *self);
 
 #endif

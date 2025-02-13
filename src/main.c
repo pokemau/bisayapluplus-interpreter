@@ -45,7 +45,7 @@ void run_file(const char *file_name) {
         .data = data
     });
 
-    scanner_token(&s);
+    scanner_scan_tokens(&s);
 
 
     fclose(f);
