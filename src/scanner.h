@@ -8,9 +8,15 @@ typedef struct scanner_source {
     const char *data;
 } scanner_source;
 
+typedef struct token_list {
+    long size;
+    long max;
+    enum TokenType *list;
+} token_list;
+
 typedef struct Scanner {
-    scanner_source *source;
-    enum TokenType *tokens;
+    scanner_source source;
+    token_list tokens;
     int start;
     int current;
     int line;
