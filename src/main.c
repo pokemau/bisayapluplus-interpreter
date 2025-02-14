@@ -44,6 +44,7 @@ void run_file(const char *file_name) {
 
 
     fclose(f);
+    free(s.tokens.list);
     free(data);
 }
 
