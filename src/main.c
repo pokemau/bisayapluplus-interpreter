@@ -1,16 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define INCREASE 1024
-
 #include "scanner.h"
+#include "util.h"
 
 struct Scanner s;
 
-void error(int line, const char *msg) {
-    fprintf(stderr, "Line: [%d], ERROR: %s\n", line, msg);
-    exit(1);
-}
 
 void run_file(const char *file_name) {
 
