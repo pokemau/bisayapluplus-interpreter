@@ -12,6 +12,11 @@ bool is_digit(const char c) {
     return true;
 }
 
+bool is_alpha(const char c) {
+
+    return true;
+}
+
 bool is_at_end(Scanner *self) {
     return self->current >= self->source.len;
 }
@@ -140,7 +145,17 @@ void scanner_scan_token(Scanner *self) {
             const char *text = get_token_substring(self,
                                                    self->start+1,
                                                    self->current);
-            add_token(self, STRING, (void*) text);
+
+            // check if string is OO or DILI
+            if (strlen(text) == 2 && strcmp("OO", text) == 0) {
+                self->start+=1;
+                add_token(self, TRUE, (void*) 1);
+            } else if (strlen(text) == 4 && strcmp("DILI", text) == 0) {
+                self->start+=1;
+                add_token(self, FALSE, (void*) 0);
+            } else {
+                add_token(self, STRING, (void*) text);
+            }
 
             get_next_char(self);
 
@@ -158,7 +173,11 @@ void scanner_scan_token(Scanner *self) {
 
         default:
             if (is_digit(c)) {
+
+            } else if (is_alpha(c)) {
+
             }
+
             bpp_error(self->line, "Unexpected character!");
             break;
     }
@@ -188,11 +207,9 @@ void scanner_scan_tokens(Scanner *self) {
     }
 
     printf("tokens\n");
-
     for (int i = 0 ; i < self->tokens.size; i++) {
-
         Token *curr = &self->tokens.list[i];
-        printf("[%d] %s %d\n", curr->line, curr->lexeme, curr->type);
+        print_token(curr);
     }
     printf("\n");
 }
