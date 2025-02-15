@@ -18,7 +18,7 @@ run: all
 
 bisaya++: $(OBJ)
 	$(CC) -o $(BIN)/bisaya++ $^ $(LDFLAGS)
-#	./$(BIN)/bisaya++
+	./$(BIN)/bisaya++ test.b++
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
