@@ -6,11 +6,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <ctype.h>
 
-bool is_digit(const char c) {
-    printf("%c:", c);
-    return true;
-}
 
 bool is_alpha(const char c) {
 
@@ -20,13 +17,22 @@ bool is_alpha(const char c) {
 bool is_at_end(Scanner *self) {
     return self->current >= self->source.len;
 }
+
 char get_next_char(Scanner *self) {
     return self->source.data[self->current++];
 }
+
 char peek(Scanner *self) {
     if (is_at_end(self)) { return '\0'; }
     return self->source.data[self->current];
 }
+
+char peek_next(Scanner *self) {
+    if (self->current +1 >= self->source.len)
+        return '\0';
+    return self->source.data[self->current+1];
+}
+
 bool match(Scanner *self, char expected) {
     if (is_at_end(self)) { return false; }
     if (self->source.data[self->current] != expected) {
@@ -36,7 +42,30 @@ bool match(Scanner *self, char expected) {
     return true;
 }
 
-const char *get_token_substring(Scanner *self, int start, int end) {
+void get_number(Scanner *self) {
+
+    while (isdigit(peek(self)))
+        get_next_char(self);
+
+
+    if (peek(self) == '.' && isdigit(peek_next(self))) {
+        get_next_char(self);
+        while(isdigit(peek(self)))
+            get_next_char(self);
+    }
+
+    const char *text = get_token_substring(self, self->start, self->current);
+    double *val = malloc(sizeof(double));
+    if (val == NULL) {
+        bpp_error(self->line, "Failed to allocate memory to double");
+    }
+
+    *val = atof(text);
+
+    add_token(self, NUMBER, val);
+}
+
+static const char *get_token_substring(Scanner *self, int start, int end) {
     int text_len = end - start + 1;
     char *text = malloc(text_len);
     if (text == NULL) {
@@ -46,7 +75,7 @@ const char *get_token_substring(Scanner *self, int start, int end) {
     return text;
 }
 
-void add_token(Scanner *self, TokenType type, void *literal) {
+static void add_token(Scanner *self, TokenType type, void *literal) {
 
     // [ DEBUG PRINT ]
 //    printf("%d ", self->current-1); // char count
@@ -62,7 +91,7 @@ void add_token(Scanner *self, TokenType type, void *literal) {
     // [ END DEBUG ]
 
 
-    if (type == STRING)
+    if (type == STRING || type == TRUE || type == FALSE)
         self->start += 1;
 
     const char *text = get_token_substring(self, self->start, self->current);
@@ -148,10 +177,8 @@ void scanner_scan_token(Scanner *self) {
 
             // check if string is OO or DILI
             if (strlen(text) == 2 && strcmp("OO", text) == 0) {
-                self->start+=1;
                 add_token(self, TRUE, (void*) 1);
             } else if (strlen(text) == 4 && strcmp("DILI", text) == 0) {
-                self->start+=1;
                 add_token(self, FALSE, (void*) 0);
             } else {
                 add_token(self, STRING, (void*) text);
@@ -172,13 +199,14 @@ void scanner_scan_token(Scanner *self) {
         case '\0': break;
 
         default:
-            if (is_digit(c)) {
-
+            if (isdigit(c)) {
+                get_number(self);
             } else if (is_alpha(c)) {
 
+            } else {
+                bpp_error(self->line, "Unexpected character! %d");
             }
 
-            bpp_error(self->line, "Unexpected character!");
             break;
     }
 }
