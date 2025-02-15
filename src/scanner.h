@@ -11,7 +11,7 @@ typedef struct scanner_source {
 typedef struct token_list {
     long size;
     long max;
-    enum TokenType *list;
+    Token *list;
 } token_list;
 
 typedef struct Scanner {

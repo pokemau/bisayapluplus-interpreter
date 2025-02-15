@@ -12,7 +12,7 @@ typedef enum TokenType {
     BANG, NOT_EQUAL,
     EQUAL, EQUAL_EQUAL,
     GREATER, GREATER_EQUAL,
-    LESS, LESS_EQUAL,
+    LESS, LESS_EQUAL,       // 20
 
     // Literals.
     IDENTIFIER, STRING, NUMBER,
@@ -31,14 +31,16 @@ typedef enum TokenType {
     EOFILE
 } TokenType;
 
-struct Token {
+typedef struct Token {
     int line;
     enum TokenType type;
+
+    // text
     const char *lexeme;
 
     // ang value nga iya gi hold
     void *literal;
-};
+} Token;
 
 
 #endif
