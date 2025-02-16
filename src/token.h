@@ -48,7 +48,7 @@ typedef enum TokenType {
     IPAKITA,
     DAWAT,
     KUNG,
-    KUNG_KUNG,
+    WALA,
     PUNDOK,
     ALANG_SA,                       // 40
 
@@ -68,6 +68,7 @@ typedef struct Token {
     void *literal;
 } Token;
 
+TokenType get_token_type(const char *s);
 void print_token(Token *t);
 
 #endif

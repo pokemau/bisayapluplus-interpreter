@@ -1,6 +1,7 @@
 #include "token.h"
 
 #include <stdio.h>
+#include <string.h>
 
 void print_token(Token *t) {
 
@@ -74,7 +75,7 @@ void print_token(Token *t) {
         text = "UG";
         break;
     case O:
-        text = "O:";
+        text = "O";
         break;
     case DILI:
         text = "DILI";
@@ -115,6 +116,9 @@ void print_token(Token *t) {
     case MUGNA:
         text = "MUGNA";
         break;
+    case WALA:
+        text = "WALA";
+        break;
     case IPAKITA:
         text = "IPAKITA";
         break;
@@ -123,9 +127,6 @@ void print_token(Token *t) {
         break;
     case KUNG:
         text = "KUNG";
-        break;
-    case KUNG_KUNG:
-        text = "KUNG_KUNG";
         break;
     case PUNDOK:
         text = "PUNDOK";
@@ -138,6 +139,61 @@ void print_token(Token *t) {
         break;
     }
 
-    printf("[%d] %s \t\t\t%s\n", t->line, t->lexeme, text);
+    printf("[%d] %-20s %s\n", t->line, text, t->lexeme);
 }
-#include "token.h"
+
+TokenType get_token_type(const char *s) {
+
+    // TODO:
+    // optimize, use better data structure
+
+    TokenType res = IDENTIFIER;
+
+    if(strcmp(s,"UG") == 0) {
+        res = UG;
+    }
+    else if(strcmp(s,"O") == 0) {
+        res = O;
+    }
+    else if(strcmp(s,"DILI") == 0) {
+        res = DILI;
+    }
+    else if(strcmp(s,"NUMERO") == 0) {
+        res = NUMERO;
+    }
+    else if(strcmp(s,"LETRA") == 0) {
+        res = LETRA;
+    }
+    else if(strcmp(s,"TIPIK") == 0) {
+        res = TIPIK;
+    }
+    else if(strcmp(s,"TINUOD") == 0) {
+        res = TINUOD;
+    }
+    else if(strcmp(s,"SUGOD") == 0) {
+        res = SUGOD;
+    }
+    else if(strcmp(s,"KATAPUSAN") == 0) {
+        res = KATAPUSAN;
+    }
+    else if(strcmp(s,"MUGNA") == 0) {
+        res = MUGNA;
+    }
+    else if(strcmp(s,"IPAKITA") == 0) {
+        res = IPAKITA;
+    }
+    else if(strcmp(s,"DAWAT") == 0) {
+        res = DAWAT;
+    }
+    else if(strcmp(s,"KUNG") == 0) {
+        res = KUNG;
+    }
+    else if(strcmp(s,"PUNDOK") == 0) {
+        res = PUNDOK;
+    }
+    else if(strcmp(s,"ALANG SA") == 0) {
+        res = ALANG_SA;
+    }
+
+    return res;
+}

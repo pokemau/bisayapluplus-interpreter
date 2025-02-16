@@ -65,6 +65,30 @@ void get_number(Scanner *self) {
     add_token(self, NUMBER, val);
 }
 
+void is_identifier(Scanner *self) {
+    char c = get_next_char(self);
+    while (isalnum(c) || c == '_') {
+        c = get_next_char(self);
+    }
+
+    const char *text = get_token_substring(self, self->start, self->current-1);
+
+    // check for ALANG SA
+    if (strcmp(text, "ALANG") == 0) {
+        if (peek(self) == 'S' && peek_next(self) == 'A') {
+            get_next_char(self);
+            c = get_next_char(self);
+            text = get_token_substring(self, self->start, self->current-1);
+            add_token(self, ALANG_SA, NULL);
+            if (c == '\n') self->line++;
+            return;
+        }
+    }
+
+    add_token(self, get_token_type(text), NULL);
+    if (c == '\n') self->line++;
+}
+
 static const char *get_token_substring(Scanner *self, int start, int end) {
     int text_len = end - start + 1;
     char *text = malloc(text_len);
@@ -72,6 +96,13 @@ static const char *get_token_substring(Scanner *self, int start, int end) {
         bpp_error(self->line, "Failed to allocate mem");
     }
     strncpy(text, self->source.data + start, text_len-1);
+
+    // remove '\n' from string
+    int l = strlen(text);
+    if (l > 0 && text[l-1] == '\n') {
+        text[l-1] = '\0';
+    }
+
     return text;
 }
 
@@ -201,8 +232,8 @@ void scanner_scan_token(Scanner *self) {
         default:
             if (isdigit(c)) {
                 get_number(self);
-            } else if (is_alpha(c)) {
-
+            } else if (c == '_' || is_alpha(c)) {
+                is_identifier(self);
             } else {
                 bpp_error(self->line, "Unexpected character! %d");
             }
@@ -234,7 +265,9 @@ void scanner_scan_tokens(Scanner *self) {
         self->start = self->current;
     }
 
-    printf("tokens\n");
+    printf("==========================\n");
+    printf("==========TOKENS==========\n");
+    printf("==========================\n");
     for (int i = 0 ; i < self->tokens.size; i++) {
         Token *curr = &self->tokens.list[i];
         print_token(curr);
