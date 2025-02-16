@@ -208,9 +208,9 @@ void scanner_scan_token(Scanner *self) {
 
             // check if string is OO or DILI
             if (strlen(text) == 2 && strcmp("OO", text) == 0) {
-                add_token(self, TRUE, (void*) 1);
+                add_token(self, TRUE, NULL);
             } else if (strlen(text) == 4 && strcmp("DILI", text) == 0) {
-                add_token(self, FALSE, (void*) 0);
+                add_token(self, FALSE, NULL);
             } else {
                 add_token(self, STRING, (void*) text);
             }
