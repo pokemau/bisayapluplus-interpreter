@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "scanner.h"
+#include "token.h"
 #include "util.h"
 
 struct Scanner s;
@@ -45,6 +46,12 @@ void run_file(const char *file_name) {
 
     fclose(f);
     free(s.tokens.list);
+    for (int i = 0; i < s.tokens.size; i++) {
+        Token *curr = &s.tokens.list[i];
+        if (curr->literal != NULL) {
+            free(curr->literal);
+        }
+    }
     free(data);
 }
 
