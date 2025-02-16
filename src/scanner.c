@@ -80,22 +80,21 @@ void is_identifier(Scanner *self) {
             c = get_next_char(self);
             text = get_token_substring(self, self->start, self->current-1);
             add_token(self, ALANG_SA, NULL);
-            if (c == '\n') self->line++;
             return;
         }
     }
 
+    self->current--;
     add_token(self, get_token_type(text), NULL);
-    if (c == '\n') self->line++;
 }
 
 static const char *get_token_substring(Scanner *self, int start, int end) {
-    int text_len = end - start + 1;
+    int text_len = end - start;
     char *text = malloc(text_len);
     if (text == NULL) {
         bpp_error(self->line, "Failed to allocate mem");
     }
-    strncpy(text, self->source.data + start, text_len-1);
+    strncpy(text, self->source.data + start, text_len);
 
     // remove '\n' from string
     int l = strlen(text);
@@ -192,6 +191,22 @@ void scanner_scan_token(Scanner *self) {
             break;
         case '\n': self->line++; break;
 
+        case '\'':
+            if (isalnum(peek(self)) && peek_next(self) == '\'') {
+                printf("%d %d\n", self->start, self->current);
+
+                get_next_char(self);
+                get_next_char(self);
+
+                const char *text = get_token_substring(self,
+                                                       self->start+1,
+                                                       self->current-1);
+                self->start++;
+                self->current--;
+                add_token(self, IDENTIFIER, (void*) text);
+            }
+
+            break;
         case '"':
             while(peek(self) != '"' && !is_at_end(self)) {
                 get_next_char(self);
