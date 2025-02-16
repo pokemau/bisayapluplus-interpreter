@@ -9,83 +9,32 @@
 #include <ctype.h>
 
 
-bool is_alpha(const char c) {
-
-    return true;
-}
-
-bool is_at_end(Scanner *self) {
+static bool is_at_end(Scanner *self) {
     return self->current >= self->source.len;
 }
 
-char get_next_char(Scanner *self) {
+static char get_next_char(Scanner *self) {
     return self->source.data[self->current++];
 }
 
-char peek(Scanner *self) {
+static char peek(Scanner *self) {
     if (is_at_end(self)) { return '\0'; }
     return self->source.data[self->current];
 }
 
-char peek_next(Scanner *self) {
+static char peek_next(Scanner *self) {
     if (self->current +1 >= self->source.len)
         return '\0';
     return self->source.data[self->current+1];
 }
 
-bool match(Scanner *self, char expected) {
+static bool match(Scanner *self, char expected) {
     if (is_at_end(self)) { return false; }
     if (self->source.data[self->current] != expected) {
         return false;
     }
     self->current++;
     return true;
-}
-
-void get_number(Scanner *self) {
-
-    while (isdigit(peek(self)))
-        get_next_char(self);
-
-
-    if (peek(self) == '.' && isdigit(peek_next(self))) {
-        get_next_char(self);
-        while(isdigit(peek(self)))
-            get_next_char(self);
-    }
-
-    const char *text = get_token_substring(self, self->start, self->current);
-    double *val = malloc(sizeof(double));
-    if (val == NULL) {
-        bpp_error(self->line, "Failed to allocate memory to double");
-    }
-
-    *val = atof(text);
-
-    add_token(self, NUMBER, val);
-}
-
-void is_identifier(Scanner *self) {
-    char c = get_next_char(self);
-    while (isalnum(c) || c == '_') {
-        c = get_next_char(self);
-    }
-
-    const char *text = get_token_substring(self, self->start, self->current-1);
-
-    // check for ALANG SA
-    if (strcmp(text, "ALANG") == 0) {
-        if (peek(self) == 'S' && peek_next(self) == 'A') {
-            get_next_char(self);
-            c = get_next_char(self);
-            text = get_token_substring(self, self->start, self->current-1);
-            add_token(self, ALANG_SA, NULL);
-            return;
-        }
-    }
-
-    self->current--;
-    add_token(self, get_token_type(text), NULL);
 }
 
 static const char *get_token_substring(Scanner *self, int start, int end) {
@@ -106,20 +55,6 @@ static const char *get_token_substring(Scanner *self, int start, int end) {
 }
 
 static void add_token(Scanner *self, TokenType type, void *literal) {
-
-    // [ DEBUG PRINT ]
-//    printf("%d ", self->current-1); // char count
-//    else if (type == EQUAL_EQUAL) printf("['%s']", "==");
-//    else if (type == GREATER_EQUAL) printf("['%s']", ">=");
-//    else if (type == LESS_EQUAL) printf("['%s']", "<=");
-//    else if (type == NOT_EQUAL) printf("['%s']", "<>");
-//    else
-//        printf("['%c']", self->source.data[self->current-1]);
-//    printf(" token: %d\n", type);
-//
-//    printf("%d %d\n", self->start, self->current);
-    // [ END DEBUG ]
-
 
     if (type == STRING || type == TRUE || type == FALSE)
         self->start += 1;
@@ -149,7 +84,54 @@ static void add_token(Scanner *self, TokenType type, void *literal) {
     }
 }
 
-void scanner_scan_token(Scanner *self) {
+
+static void get_number(Scanner *self) {
+
+    while (isdigit(peek(self)))
+        get_next_char(self);
+
+
+    if (peek(self) == '.' && isdigit(peek_next(self))) {
+        get_next_char(self);
+        while(isdigit(peek(self)))
+            get_next_char(self);
+    }
+
+    const char *text = get_token_substring(self, self->start, self->current);
+    double *val = malloc(sizeof(double));
+    if (val == NULL) {
+        bpp_error(self->line, "Failed to allocate memory to double");
+    }
+
+    *val = atof(text);
+
+    add_token(self, NUMBER, val);
+}
+
+static void is_identifier(Scanner *self) {
+    char c = get_next_char(self);
+    while (isalnum(c) || c == '_') {
+        c = get_next_char(self);
+    }
+
+    const char *text = get_token_substring(self, self->start, self->current-1);
+
+    // check for ALANG SA
+    if (strcmp(text, "ALANG") == 0) {
+        if (peek(self) == 'S' && peek_next(self) == 'A') {
+            get_next_char(self);
+            c = get_next_char(self);
+            text = get_token_substring(self, self->start, self->current-1);
+            add_token(self, ALANG_SA, NULL);
+            return;
+        }
+    }
+
+    self->current--;
+    add_token(self, get_token_type(text), NULL);
+}
+
+static void scanner_scan_token(Scanner *self) {
     char c = get_next_char(self);
 
     switch(c) {
@@ -162,6 +144,9 @@ void scanner_scan_token(Scanner *self) {
         case ',': add_token(self, COMMA, NULL);           break;
         case '.': add_token(self, DOT, NULL);             break;
         case '/': add_token(self, SLASH, NULL);           break;
+        case '&': add_token(self, AMPERSAND, NULL);       break;
+        case '$': add_token(self, DOLLAR, NULL);          break;
+        case '#': add_token(self, HASH, NULL);            break;
         case '-':
             // comment
             if (match(self, '-')) {
@@ -173,6 +158,7 @@ void scanner_scan_token(Scanner *self) {
             break;
         case '+': add_token(self, PLUS, NULL);            break;
         case ';': add_token(self, SEMICOLON, NULL);       break;
+        case ':': add_token(self, COLON, NULL);           break;
         case '*': add_token(self, STAR, NULL);            break;
         case '=':
             add_token(self, match(self, '=') ? EQUAL_EQUAL: EQUAL, NULL);
@@ -193,8 +179,6 @@ void scanner_scan_token(Scanner *self) {
 
         case '\'':
             if (isalnum(peek(self)) && peek_next(self) == '\'') {
-                printf("%d %d\n", self->start, self->current);
-
                 get_next_char(self);
                 get_next_char(self);
 
@@ -208,6 +192,8 @@ void scanner_scan_token(Scanner *self) {
 
             break;
         case '"':
+
+            // shit code, refactor
             while(peek(self) != '"' && !is_at_end(self)) {
                 get_next_char(self);
             }
@@ -247,10 +233,11 @@ void scanner_scan_token(Scanner *self) {
         default:
             if (isdigit(c)) {
                 get_number(self);
-            } else if (c == '_' || is_alpha(c)) {
+            } else if (c == '_' || isalpha(c)) {
                 is_identifier(self);
             } else {
-                bpp_error(self->line, "Unexpected character! %d");
+                printf("{ %c }\n", c);
+                bpp_error(self->line, "Unexpected character!");
             }
 
             break;

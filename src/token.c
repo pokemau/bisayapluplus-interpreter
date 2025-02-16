@@ -137,6 +137,18 @@ void print_token(Token *t) {
     case EOFILE:
         text = "EOFILE";
         break;
+    case COLON:
+        text = "COLON";
+        break;
+    case AMPERSAND:
+        text = "AMPERSAND";
+        break;
+    case DOLLAR:
+        text = "DOLLAR";
+        break;
+    case HASH:
+        text = "HASH";
+        break;
     }
 
     printf("[%d] %-20s %s\n", t->line, text, t->lexeme);

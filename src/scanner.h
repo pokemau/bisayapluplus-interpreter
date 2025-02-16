@@ -23,9 +23,6 @@ typedef struct Scanner {
 } Scanner;
 
 Scanner scanner_create(scanner_source *source);
-
-static const char *get_token_substring(Scanner *self, int start, int end);
-static void add_token(Scanner *self, TokenType type, void *literal);
 void scanner_scan_tokens(Scanner *self);
 
 #endif

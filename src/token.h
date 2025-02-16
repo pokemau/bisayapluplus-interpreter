@@ -10,7 +10,11 @@ typedef enum TokenType {
     COMMA,
     DOT,
     SEMICOLON,
-    EQUAL,                          // 7
+    COLON,
+    EQUAL,
+    AMPERSAND,
+    DOLLAR,                         // 10
+    HASH,
 
     // Arithmetic Operators
     LEFT_PAREN,
@@ -25,21 +29,21 @@ typedef enum TokenType {
     GREATER_EQUAL,
     LESS_EQUAL,
     EQUAL_EQUAL,
-    NOT_EQUAL,                      // 20
+    NOT_EQUAL,                      // 23
 
     // Logical Operators (AND, OR, NOT)
-    UG, O, DILI,                    // 23
+    UG, O, DILI,                    // 26
 
     // Boolean ("OO", "DILI")
-    TRUE, FALSE,                    // 25
+    TRUE, FALSE,                    // 28
 
     // Unary operator (+, -) // IDK
 
     // Literals
-    IDENTIFIER, STRING, NUMBER,     // 28
+    IDENTIFIER, STRING, NUMBER,     // 31
 
     // Data Types
-    NUMERO, LETRA, TIPIK, TINUOD,   // 32
+    NUMERO, LETRA, TIPIK, TINUOD,   // 35
 
     // Keywords
     SUGOD,
@@ -50,7 +54,7 @@ typedef enum TokenType {
     KUNG,
     WALA,
     PUNDOK,
-    ALANG_SA,                       // 40
+    ALANG_SA,                       // 43
 
     // EOF
     EOFILE
