@@ -9,6 +9,10 @@
 #include <ctype.h>
 
 
+bool is_alpha(const char c) {
+    return isalpha(c) || c == '_';
+}
+
 static bool is_at_end(Scanner *self) {
     return self->current >= self->source.len;
 }
@@ -23,9 +27,9 @@ static char peek(Scanner *self) {
 }
 
 static char peek_next(Scanner *self) {
-    if (self->current +1 >= self->source.len)
+    if (self->current + 1 >= self->source.len)
         return '\0';
-    return self->source.data[self->current+1];
+    return self->source.data[self->current + 1];
 }
 
 static bool match(Scanner *self, char expected) {
@@ -47,8 +51,8 @@ static const char *get_token_substring(Scanner *self, int start, int end) {
 
     // remove '\n' from string
     int l = strlen(text);
-    if (l > 0 && text[l-1] == '\n') {
-        text[l-1] = '\0';
+    if (l > 0 && text[l - 1] == '\n') {
+        text[l - 1] = '\0';
     }
 
     return text;
@@ -84,12 +88,59 @@ static void add_token(Scanner *self, TokenType type, void *literal) {
     }
 }
 
+static void scan_string(Scanner *self) {
+    // shit code, refactor
+    while(peek(self) != '"' && !is_at_end(self)) {
+        get_next_char(self);
+    }
 
-static void get_number(Scanner *self) {
+    if (is_at_end(self)) {
+        bpp_error(self->line, "Unterminated String");
+    }
+
+    const char *text = get_token_substring(self,
+                                           self->start + 1,
+                                           self->current);
+    // check if string is OO or DILI
+    if (strlen(text) == 2 && strcmp("OO", text) == 0) {
+        add_token(self, TRUE, NULL);
+    } else if (strlen(text) == 4 && strcmp("DILI", text) == 0) {
+        add_token(self, FALSE, NULL);
+    } else {
+        add_token(self, STRING, (void*) text);
+    }
+
+    get_next_char(self);
+}
+
+static void scan_char(Scanner *self) {
+    if (isalnum(peek(self)) && peek_next(self) == '\'') {
+        get_next_char(self);
+        get_next_char(self);
+
+        const char *text = get_token_substring(self,
+                                               self->start + 1,
+                                               self->current - 1);
+        self->start++;
+        self->current--;
+        add_token(self, IDENTIFIER, (void*) text);
+    }
+}
+
+static void scan_comment(Scanner *self) {
+    if (match(self, '-')) {
+        while (peek(self) != '\n' && !is_at_end(self))
+            get_next_char(self);
+    } else {
+        add_token(self, MINUS, NULL);
+    }
+}
+
+
+static void scan_number(Scanner *self) {
 
     while (isdigit(peek(self)))
         get_next_char(self);
-
 
     if (peek(self) == '.' && isdigit(peek_next(self))) {
         get_next_char(self);
@@ -102,18 +153,15 @@ static void get_number(Scanner *self) {
     if (val == NULL) {
         bpp_error(self->line, "Failed to allocate memory to double");
     }
-
     *val = atof(text);
-
     add_token(self, NUMBER, val);
 }
 
-static void is_identifier(Scanner *self) {
+static void scan_identifier(Scanner *self) {
     char c = get_next_char(self);
     while (isalnum(c) || c == '_') {
         c = get_next_char(self);
     }
-
     const char *text = get_token_substring(self, self->start, self->current-1);
 
     // check for ALANG SA
@@ -135,6 +183,13 @@ static void scanner_scan_token(Scanner *self) {
     char c = get_next_char(self);
 
     switch(c) {
+        case ' ':
+        case '\t':
+        case '\r':
+            break;
+        case '\n':
+            self->line++; break;
+        case '\0': add_token(self, EOFILE, NULL);         break;
         case '(': add_token(self, LEFT_PAREN, NULL);      break;
         case ')': add_token(self, RIGHT_PAREN, NULL);     break;
         case '{': add_token(self, LEFT_BRACE, NULL);      break;
@@ -147,19 +202,11 @@ static void scanner_scan_token(Scanner *self) {
         case '&': add_token(self, AMPERSAND, NULL);       break;
         case '$': add_token(self, DOLLAR, NULL);          break;
         case '#': add_token(self, HASH, NULL);            break;
-        case '-':
-            // comment
-            if (match(self, '-')) {
-                while (peek(self) != '\n' && !is_at_end(self))
-                    get_next_char(self);
-            } else {
-                add_token(self, MINUS, NULL);
-            }
-            break;
         case '+': add_token(self, PLUS, NULL);            break;
         case ';': add_token(self, SEMICOLON, NULL);       break;
         case ':': add_token(self, COLON, NULL);           break;
         case '*': add_token(self, STAR, NULL);            break;
+        case '-': scan_comment(self);                     break;
         case '=':
             add_token(self, match(self, '=') ? EQUAL_EQUAL: EQUAL, NULL);
             break;
@@ -175,71 +222,19 @@ static void scanner_scan_token(Scanner *self) {
                 add_token(self, LESS, NULL);
             }
             break;
-        case '\n': self->line++; break;
 
-        case '\'':
-            if (isalnum(peek(self)) && peek_next(self) == '\'') {
-                get_next_char(self);
-                get_next_char(self);
-
-                const char *text = get_token_substring(self,
-                                                       self->start+1,
-                                                       self->current-1);
-                self->start++;
-                self->current--;
-                add_token(self, IDENTIFIER, (void*) text);
-            }
-
-            break;
-        case '"':
-
-            // shit code, refactor
-            while(peek(self) != '"' && !is_at_end(self)) {
-                get_next_char(self);
-            }
-
-            if (is_at_end(self)) {
-                bpp_error(self->line, "Unterminated String");
-            }
-
-
-            const char *text = get_token_substring(self,
-                                                   self->start+1,
-                                                   self->current);
-
-            // check if string is OO or DILI
-            if (strlen(text) == 2 && strcmp("OO", text) == 0) {
-                add_token(self, TRUE, NULL);
-            } else if (strlen(text) == 4 && strcmp("DILI", text) == 0) {
-                add_token(self, FALSE, NULL);
-            } else {
-                add_token(self, STRING, (void*) text);
-            }
-
-            get_next_char(self);
-
-            break;
-
-
-        // ignore whitespace
-        case ' ':
-        case '\t':
-        case '\r':
-            break;
-
-        // EOF
-        case '\0': break;
+        case '\'': scan_char(self);                       break;
+        case '"': scan_string(self);                      break;
 
         default:
             if (isdigit(c)) {
-                get_number(self);
-            } else if (c == '_' || isalpha(c)) {
-                is_identifier(self);
+                scan_number(self);
+            } else if (is_alpha(c)) {
+                scan_identifier(self);
             } else {
                 printf("{ %c }\n", c);
                 bpp_error(self->line, "Unexpected character!");
             }
-
             break;
     }
 }
@@ -260,13 +255,7 @@ struct Scanner scanner_create(scanner_source *source) {
     return self;
 }
 
-void scanner_scan_tokens(Scanner *self) {
-
-    while (!is_at_end(self)) {
-        scanner_scan_token(self);
-        self->start = self->current;
-    }
-
+static void print_tokens(Scanner *self) {
     printf("==========================\n");
     printf("==========TOKENS==========\n");
     printf("==========================\n");
@@ -275,6 +264,15 @@ void scanner_scan_tokens(Scanner *self) {
         print_token(curr);
     }
     printf("\n");
+}
+
+void scanner_scan_tokens(Scanner *self) {
+    while (!is_at_end(self)) {
+        scanner_scan_token(self);
+        self->start = self->current;
+    }
+
+    print_tokens(self);
 }
 
 
