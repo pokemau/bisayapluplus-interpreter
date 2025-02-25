@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void print_token(Token *t) {
+void print_token(token *t) {
 
     const char *text;
 

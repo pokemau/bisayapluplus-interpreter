@@ -13,7 +13,7 @@ typedef enum TokenType {
     COLON,
     EQUAL,
     AMPERSAND,
-    DOLLAR,                         // 10
+    DOLLAR,
     HASH,
 
     // Arithmetic Operators
@@ -29,21 +29,21 @@ typedef enum TokenType {
     GREATER_EQUAL,
     LESS_EQUAL,
     EQUAL_EQUAL,
-    NOT_EQUAL,                      // 23
+    NOT_EQUAL,
 
     // Logical Operators (AND, OR, NOT)
-    UG, O, DILI,                    // 26
+    UG, O, DILI,
 
     // Boolean ("OO", "DILI")
-    TRUE, FALSE,                    // 28
+    TRUE, FALSE,
 
     // Unary operator (+, -) // IDK
 
     // Literals
-    IDENTIFIER, STRING, NUMBER,     // 31
+    IDENTIFIER, STRING, NUMBER,
 
-    // Data Types
-    NUMERO, LETRA, TIPIK, TINUOD,   // 35
+    // Data Types (NUMBER, CHAR, FLOAT, BOOLEAN)
+    NUMERO, LETRA, TIPIK, TINUOD,
 
     // Keywords
     SUGOD,
@@ -54,14 +54,14 @@ typedef enum TokenType {
     KUNG,
     WALA,
     PUNDOK,
-    ALANG_SA,                       // 43
+    ALANG_SA,
 
     // EOF
     EOFILE
 } TokenType;
 
 
-typedef struct Token {
+typedef struct token {
     int line;
     enum TokenType type;
 
@@ -70,9 +70,9 @@ typedef struct Token {
 
     // ang value nga iya gi hold
     void *literal;
-} Token;
+} token;
 
 TokenType get_token_type(const char *s);
-void print_token(Token *t);
+void print_token(token *t);
 
 #endif

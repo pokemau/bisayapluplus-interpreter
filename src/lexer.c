@@ -1,4 +1,4 @@
-#include "scanner.h"
+#include "lexer.h"
 #include "token.h"
 #include "util.h"
 
@@ -13,26 +13,26 @@ bool is_alpha(const char c) {
     return isalpha(c) || c == '_';
 }
 
-static bool is_at_end(Scanner *self) {
+static bool is_at_end(lexer *self) {
     return self->current >= self->source.len;
 }
 
-static char get_next_char(Scanner *self) {
+static char get_next_char(lexer *self) {
     return self->source.data[self->current++];
 }
 
-static char peek(Scanner *self) {
+static char peek(lexer *self) {
     if (is_at_end(self)) { return '\0'; }
     return self->source.data[self->current];
 }
 
-static char peek_next(Scanner *self) {
+static char peek_next(lexer *self) {
     if (self->current + 1 >= self->source.len)
         return '\0';
     return self->source.data[self->current + 1];
 }
 
-static bool match(Scanner *self, char expected) {
+static bool match(lexer *self, char expected) {
     if (is_at_end(self)) { return false; }
     if (self->source.data[self->current] != expected) {
         return false;
@@ -41,7 +41,7 @@ static bool match(Scanner *self, char expected) {
     return true;
 }
 
-static const char *get_token_substring(Scanner *self, int start, int end) {
+static const char *get_token_substring(lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = malloc(text_len);
     if (text == NULL) {
@@ -58,14 +58,14 @@ static const char *get_token_substring(Scanner *self, int start, int end) {
     return text;
 }
 
-static void add_token(Scanner *self, TokenType type, void *literal) {
+static void add_token(lexer *self, TokenType type, void *literal) {
 
     if (type == STRING || type == TRUE || type == FALSE)
         self->start += 1;
 
     const char *text = get_token_substring(self, self->start, self->current);
 
-    self->tokens.list[self->tokens.size++] = (Token){
+    self->tokens.list[self->tokens.size++] = (token){
         .line = self->line,
         .lexeme = text,
         .type = type,
@@ -88,7 +88,7 @@ static void add_token(Scanner *self, TokenType type, void *literal) {
     }
 }
 
-static void scan_string(Scanner *self) {
+static void scan_string(lexer *self) {
     // shit code, refactor
     while(peek(self) != '"' && !is_at_end(self)) {
         get_next_char(self);
@@ -113,7 +113,7 @@ static void scan_string(Scanner *self) {
     get_next_char(self);
 }
 
-static void scan_char(Scanner *self) {
+static void scan_char(lexer *self) {
     if (isalnum(peek(self)) && peek_next(self) == '\'') {
         get_next_char(self);
         get_next_char(self);
@@ -127,7 +127,7 @@ static void scan_char(Scanner *self) {
     }
 }
 
-static void scan_comment(Scanner *self) {
+static void scan_comment(lexer *self) {
     if (match(self, '-')) {
         while (peek(self) != '\n' && !is_at_end(self))
             get_next_char(self);
@@ -137,7 +137,7 @@ static void scan_comment(Scanner *self) {
 }
 
 
-static void scan_number(Scanner *self) {
+static void scan_number(lexer *self) {
 
     while (isdigit(peek(self)))
         get_next_char(self);
@@ -157,7 +157,7 @@ static void scan_number(Scanner *self) {
     add_token(self, NUMBER, val);
 }
 
-static void scan_identifier(Scanner *self) {
+static void scan_identifier(lexer *self) {
     char c = get_next_char(self);
     while (isalnum(c) || c == '_') {
         c = get_next_char(self);
@@ -179,7 +179,7 @@ static void scan_identifier(Scanner *self) {
     add_token(self, get_token_type(text), NULL);
 }
 
-static void scanner_scan_token(Scanner *self) {
+static void lexer_scan_token(lexer *self) {
     char c = get_next_char(self);
 
     switch(c) {
@@ -239,12 +239,12 @@ static void scanner_scan_token(Scanner *self) {
     }
 }
 
-struct Scanner scanner_create(scanner_source *source) {
+lexer lexer_create(struct lexer_src *source) {
 
-    struct Scanner self;
+    lexer self;
     self.source = *source;
-
     self.tokens.list = malloc(sizeof(token_list) * INCREASE);
+
     self.tokens.size = 0;
     self.tokens.max = sizeof(token_list) * INCREASE;
 
@@ -255,20 +255,21 @@ struct Scanner scanner_create(scanner_source *source) {
     return self;
 }
 
-static void print_tokens(Scanner *self) {
+static void print_tokens(lexer *self) {
     printf("==========================\n");
     printf("==========TOKENS==========\n");
     printf("==========================\n");
+
     for (int i = 0 ; i < self->tokens.size; i++) {
-        Token *curr = &self->tokens.list[i];
+        token *curr = &self->tokens.list[i];
         print_token(curr);
     }
     printf("\n");
 }
 
-void scanner_scan_tokens(Scanner *self) {
+void lexer_gen_tokens(lexer *self) {
     while (!is_at_end(self)) {
-        scanner_scan_token(self);
+        lexer_scan_token(self);
         self->start = self->current;
     }
 

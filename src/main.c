@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "scanner.h"
+#include "lexer.h"
 #include "token.h"
 #include "util.h"
 
-struct Scanner s;
-
+lexer s;
 
 void run_file(const char *file_name) {
 
@@ -22,7 +21,6 @@ void run_file(const char *file_name) {
     size_t total = 0;
 
     char *data = malloc(allocated);
-
     while (!feof(f) && !ferror(f)) {
         data[total] = fgetc(f);
         total++;
@@ -35,19 +33,20 @@ void run_file(const char *file_name) {
     data = realloc(data, total);
     data[total-1] = '\0';
 
-    // scanner stuff here
-    s = scanner_create(&(scanner_source) {
+    // lexer stuff here
+    s = lexer_create(&(lexer_src) {
         .len = total,
         .data = data
     });
 
-    scanner_scan_tokens(&s);
+    lexer_gen_tokens(&s);
 
 
+    // free allocated stuff
     fclose(f);
     free(s.tokens.list);
     for (int i = 0; i < s.tokens.size; i++) {
-        Token *curr = &s.tokens.list[i];
+        token *curr = &s.tokens.list[i];
         if (curr->literal != NULL) {
             free(curr->literal);
         }
