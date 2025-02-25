@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(${PROJECT_NAME}
     src/main.c
-    src/scanner.c
+    src/lexer.c
     src/util.c
     src/token.c
 )
