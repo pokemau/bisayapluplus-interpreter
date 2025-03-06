@@ -5,17 +5,17 @@
 
 typedef enum ast_node_type {
     AST_PROGRAM,
-    AST_VAR_DECL, // MUGNA var declaration
-    AST_ASSIGN,   // var assignments
-    AST_PRINT,    // IPAKITA statements
-    AST_INPUT,    // DAWAT statements
-    AST_IF,       // KUNG, KUNG WALA, KUNG DILI
-    AST_FOR,      // ALAG SA
-    AST_BLOCK,    // PUNDOK
-    AST_BINARY,   // Binary operations (+, -, /, *)
-    AST_UNARY,    // Unary operatins (+, -)
-    AST_LITERAL,  // Literals (NUMERO, LETRA, TINUOD, PITIK)
-    AST_VARIABLE, // Variable reference
+    AST_VAR_DECL,   // MUGNA var declaration
+    AST_ASSIGNMENT, // var assignments
+    AST_PRINT,      // IPAKITA statements
+    AST_INPUT,      // DAWAT statements
+    AST_IF,         // KUNG, KUNG WALA, KUNG DILI
+    AST_FOR,        // ALAG SA
+    AST_BLOCK,      // PUNDOK
+    AST_BINARY,     // Binary operations (+, -, /, *)
+    AST_UNARY,      // Unary operatins (+, -)
+    AST_LITERAL,    // Literals (NUMERO, LETRA, TINUOD, PITIK)
+    AST_VARIABLE,   // Variable reference
 } ast_node_type;
 
 typedef struct ast_node ast_node;
@@ -38,7 +38,7 @@ struct ast_node {
         struct {
             token *var;
             ast_node *expr;
-        } assign;
+        } assignment;
 
         struct {
             ast_node **exprs;

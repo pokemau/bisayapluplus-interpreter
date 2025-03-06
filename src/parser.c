@@ -123,7 +123,11 @@ static ast_node *parse_statement(parser *self) {
         return t;
     } else if (match(self, IPAKITA)) {
         return parse_print(self);
-    } // else if (match(self, DAWAT)) {
+    } else if (match(self, IDENTIFIER)) {
+        return parse_assignment(self);
+    }
+
+    // } else if (match(self, DAWAT)) {
     //     return parse_input(self);
     // } else if (match(self, KUNG)) {
     //     return parse_if(self);
@@ -196,19 +200,20 @@ static ast_node *parse_var_decl(parser *self) {
 }
 
 static ast_node *parse_assignment(parser *self) {
-    token *var = advance(self); // Variable name
-    consume(self, EQUAL, "Expected '=' after variable");
+    token *var_name = advance(self);
+    consume(self, EQUAL, "Expected '=' after variable name");
 
-    ast_node *expr;
+    ast_node *expr = NULL;
+
     if (match(self, IDENTIFIER) && peek_next(self)->type == EQUAL) {
         expr = parse_assignment(self);
     } else {
         expr = parse_expression(self);
     }
 
-    ast_node *assign = new_ast_node(AST_ASSIGN);
-    assign->assign.var = var;
-    assign->assign.expr = expr;
+    ast_node *assign = new_ast_node(AST_ASSIGNMENT);
+    assign->assignment.expr = expr;
+    assign->assignment.var = var_name;
     return assign;
 }
 
@@ -226,8 +231,6 @@ static ast_node *parse_print(parser *self) {
     while (!match(self, NEWLINE)) {
         ast_node *expr = parse_expression(self);
         exprs[expr_count++] = expr;
-
-        print_ast(expr,0);
 
         if (expr_count == temp_size) {
             exprs = realloc(exprs, sizeof(ast_node *) * (expr_count * 10));

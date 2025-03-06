@@ -59,11 +59,11 @@ void print_ast(ast_node *node, int depth) {
         }
         break;
 
-    case AST_ASSIGN:
-        printf("[ASSIGN] (var: %s)\n", node->assign.var->lexeme);
+    case AST_ASSIGNMENT:
+        printf("[ASSIGN] (var: %s)\n", node->assignment.var->lexeme);
         print_indent(depth + 1);
         printf("Value:\n");
-        print_ast(node->assign.expr, depth + 2);
+        print_ast(node->assignment.expr, depth + 2);
         break;
 
     case AST_PRINT:
