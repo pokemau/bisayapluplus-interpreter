@@ -27,6 +27,7 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_VAR_DECL:
+        printf("[VAR_DECL] ");
         switch (node->var_decl.d_type) {
         case NUMERO:
             printf("NUMERO");
@@ -59,14 +60,14 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_ASSIGN:
-        printf("ASSIGN (var: %s)\n", node->assign.var->lexeme);
+        printf("[ASSIGN] (var: %s)\n", node->assign.var->lexeme);
         print_indent(depth + 1);
         printf("Value:\n");
         print_ast(node->assign.expr, depth + 2);
         break;
 
     case AST_PRINT:
-        printf("PRINT (expr_count: %d)\n", node->print.expr_count);
+        printf("[PRINT] (expr_count: %d)\n", node->print.expr_count);
         for (int i = 0; i < node->print.expr_count; i++) {
             print_indent(depth + 1);
             printf("Expr %d:\n", i + 1);
@@ -75,7 +76,7 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_INPUT:
-        printf("INPUT (var_count: %d)\n", node->input.var_count);
+        printf("[INPUT] (var_count: %d)\n", node->input.var_count);
         for (int i = 0; i < node->input.var_count; i++) {
             print_indent(depth + 1);
             printf("Var: %s\n", node->input.vars[i].lexeme);
@@ -83,7 +84,7 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_IF:
-        printf("IF\n");
+        printf("[IF]\n");
         print_indent(depth + 1);
         printf("Condition:\n");
         print_ast(node->if_stmt.condition, depth + 2);
@@ -98,7 +99,7 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_FOR:
-        printf("FOR\n");
+        printf("[FOR]\n");
         print_indent(depth + 1);
         printf("Init:\n");
         print_ast(node->for_stmt.init, depth + 2);
@@ -114,14 +115,14 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_BLOCK:
-        printf("BLOCK (stmt_count: %d)\n", node->block.stmt_count);
+        printf("[BLOCK] (stmt_count: %d)\n", node->block.stmt_count);
         for (int i = 0; i < node->block.stmt_count; i++) {
             print_ast(&node->block.statements[i], depth + 1);
         }
         break;
 
     case AST_BINARY:
-        printf("BINARY (op: %s)\n", node->binary.op->lexeme);
+        printf("[BINARY] (op: %s)\n", node->binary.op->lexeme);
         print_indent(depth + 1);
         printf("Left:\n");
         print_ast(node->binary.left, depth + 2);
@@ -131,23 +132,24 @@ void print_ast(ast_node *node, int depth) {
         break;
 
     case AST_UNARY:
-        printf("UNARY (op: %s)\n", node->unary.op->lexeme);
+        printf("[UNARY] (op: %s)\n", node->unary.op->lexeme);
         print_indent(depth + 1);
         printf("Expr:\n");
         print_ast(node->unary.expr, depth + 2);
         break;
 
     case AST_LITERAL:
-        printf("LITERAL (type: %d, value: %s)\n", node->literal.value->type,
+        printf("[LITERAL] (type: %s, value: %s)\n",
+               token_val[node->literal.value->type],
                node->literal.value->lexeme);
         break;
 
     case AST_VARIABLE:
-        printf("VARIABLE (name: %s)\n", node->variable.name->lexeme);
+        printf("[VARIABLE] (name: %s)\n", node->variable.name->lexeme);
         break;
 
     default:
-        printf("UNKNOWN (type: %d)\n", node->type);
+        printf("[UNKNOWN] (type: %d)\n", node->type);
         break;
     }
 }

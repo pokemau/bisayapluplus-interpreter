@@ -95,7 +95,7 @@ ast_node *parser_parse(parser *self) {
         }
 
         ast_node *stmt = parse_statement(self);
-
+//        ast_node *stmt = parse_declaration(self);
         stmts[stmt_count] = *stmt;
         stmt_count++;
 
@@ -107,8 +107,7 @@ ast_node *parser_parse(parser *self) {
 
     consume(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
 
-    program->program.statements =
-        realloc(stmts, sizeof(ast_node) * stmt_count);
+    program->program.statements = realloc(stmts, sizeof(ast_node) * stmt_count);
     program->program.stmt_count = stmt_count;
     program->program.statements = stmts;
 
@@ -119,7 +118,9 @@ static ast_node *parse_statement(parser *self) {
     token *t = peek(self);
 
     if (match(self, MUGNA)) {
-        return parse_var_decl(self);
+        ast_node *t = parse_var_decl(self);
+        printf("%d\n", t->type);
+        return t;
     } else if (match(self, IPAKITA)) {
         return parse_print(self);
     } // else if (match(self, DAWAT)) {
@@ -200,8 +201,7 @@ static ast_node *parse_assignment(parser *self) {
 
     ast_node *expr;
     if (match(self, IDENTIFIER) && peek_next(self)->type == EQUAL) {
-        // Chained assignment, e.g., x = y = 4
-        expr = parse_assignment(self); // Recursively parse the next assignment
+        expr = parse_assignment(self);
     } else {
         expr = parse_expression(self);
     }
@@ -213,25 +213,35 @@ static ast_node *parse_assignment(parser *self) {
 }
 
 static ast_node *parse_print(parser *self) {
-    advance(self); // Skip IPAKITA
+    advance(self);
     consume(self, COLON, "Expected ':' after 'IPAKITA'");
 
     ast_node *print = new_ast_node(AST_PRINT);
     ast_node **exprs = NULL;
+    int temp_size = 10;
+    exprs = malloc(sizeof(ast_node *) * temp_size);
+
     int expr_count = 0;
 
-    do {
+    while (!match(self, NEWLINE)) {
         ast_node *expr = parse_expression(self);
-        exprs = realloc(exprs, sizeof(ast_node *) * (expr_count + 1));
         exprs[expr_count++] = expr;
 
-        // Continue if there's an ampersand (&)
+        print_ast(expr,0);
+
+        if (expr_count == temp_size) {
+            exprs = realloc(exprs, sizeof(ast_node *) * (expr_count * 10));
+            if (!exprs) {
+                fprintf(stderr, "ERROR:>Failed to resize (parse_print)\n");
+                exit(1);
+            }
+            temp_size += 10;
+        }
+
         if (match(self, AMPERSAND)) {
             advance(self);
-        } else {
-            break; // Stop at anything other than &
         }
-    } while (peek(self) && !match(self, NEWLINE));
+    }
 
     print->print.exprs = exprs;
     print->print.expr_count = expr_count;

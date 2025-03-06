@@ -170,49 +170,35 @@ TokenType get_token_type(const char *s) {
 
     TokenType res = IDENTIFIER;
 
-    if(strcmp(s,"UG") == 0) {
+    if (strcmp(s, "UG") == 0) {
         res = UG;
-    }
-    else if(strcmp(s,"O") == 0) {
+    } else if (strcmp(s, "O") == 0) {
         res = O;
-    }
-    else if(strcmp(s,"DILI") == 0) {
+    } else if (strcmp(s, "DILI") == 0) {
         res = DILI;
-    }
-    else if(strcmp(s,"NUMERO") == 0) {
+    } else if (strcmp(s, "NUMERO") == 0) {
         res = NUMERO;
-    }
-    else if(strcmp(s,"LETRA") == 0) {
+    } else if (strcmp(s, "LETRA") == 0) {
         res = LETRA;
-    }
-    else if(strcmp(s,"TIPIK") == 0) {
+    } else if (strcmp(s, "TIPIK") == 0) {
         res = TIPIK;
-    }
-    else if(strcmp(s,"TINUOD") == 0) {
+    } else if (strcmp(s, "TINUOD") == 0) {
         res = TINUOD;
-    }
-    else if(strcmp(s,"SUGOD") == 0) {
+    } else if (strcmp(s, "SUGOD") == 0) {
         res = SUGOD;
-    }
-    else if(strcmp(s,"KATAPUSAN") == 0) {
+    } else if (strcmp(s, "KATAPUSAN") == 0) {
         res = KATAPUSAN;
-    }
-    else if(strcmp(s,"MUGNA") == 0) {
+    } else if (strcmp(s, "MUGNA") == 0) {
         res = MUGNA;
-    }
-    else if(strcmp(s,"IPAKITA") == 0) {
+    } else if (strcmp(s, "IPAKITA") == 0) {
         res = IPAKITA;
-    }
-    else if(strcmp(s,"DAWAT") == 0) {
+    } else if (strcmp(s, "DAWAT") == 0) {
         res = DAWAT;
-    }
-    else if(strcmp(s,"KUNG") == 0) {
+    } else if (strcmp(s, "KUNG") == 0) {
         res = KUNG;
-    }
-    else if(strcmp(s,"PUNDOK") == 0) {
+    } else if (strcmp(s, "PUNDOK") == 0) {
         res = PUNDOK;
-    }
-    else if(strcmp(s,"ALANG SA") == 0) {
+    } else if (strcmp(s, "ALANG SA") == 0) {
         res = ALANG_SA;
     }
 
