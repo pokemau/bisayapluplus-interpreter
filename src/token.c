@@ -149,6 +149,15 @@ void print_token(token *t) {
     case HASH:
         text = "HASH";
         break;
+    case NEWLINE:
+        text = "NEWLINE";
+        break;
+    case KUNG_WALA:
+        text = "KUNG_WALA";
+        break;
+    case KUNG_DILI:
+        text = "KUNG_DILI";
+        break;
     }
 
     printf("[%d] %-20s %s\n", t->line, text, t->lexeme);

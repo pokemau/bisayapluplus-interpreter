@@ -4,8 +4,37 @@
 #include "lexer.h"
 #include "token.h"
 #include "util.h"
+#include "parser.h"
 
 lexer s;
+parser p;
+
+void run(const char *data, size_t total) {
+    s = lexer_create(&(lexer_src){.len = total, .data = data});
+    lexer_gen_tokens(&s);
+    p = parser_create(&s.tokens);
+
+    ast_node *ast = parser_parse(&p);
+
+    printf("=========================\n");
+    printf("========= AST ===========\n");
+    printf("=========================\n");
+    print_ast(ast, 0);
+
+    //    i = interpreter_create(&p);
+    //    interpreter_run(&i,ast);
+    //
+    //    interpreter_free(&i);
+
+    // free allocated stuff
+    free(s.tokens.list);
+    for (int i = 0; i < s.tokens.size; i++) {
+        token *curr = &s.tokens.list[i];
+        if (curr->literal != NULL) {
+            free(curr->literal);
+        }
+    }
+}
 
 void run_file(const char *file_name) {
 
@@ -31,26 +60,12 @@ void run_file(const char *file_name) {
     }
 
     data = realloc(data, total);
-    data[total-1] = '\0';
+    data[total - 1] = '\0';
 
-    // lexer stuff here
-    s = lexer_create(&(lexer_src) {
-        .len = total,
-        .data = data
-    });
+    run(data, total);
 
-    lexer_gen_tokens(&s);
-
-
-    // free allocated stuff
     fclose(f);
-    free(s.tokens.list);
-    for (int i = 0; i < s.tokens.size; i++) {
-        token *curr = &s.tokens.list[i];
-        if (curr->literal != NULL) {
-            free(curr->literal);
-        }
-    }
+
     free(data);
 }
 

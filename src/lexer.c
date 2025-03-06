@@ -188,7 +188,9 @@ static void lexer_scan_token(lexer *self) {
         case '\r':
             break;
         case '\n':
-            self->line++; break;
+            add_token(self, NEWLINE, NULL);
+            self->line++;
+            break;
         case '\0': add_token(self, EOFILE, NULL);         break;
         case '(': add_token(self, LEFT_PAREN, NULL);      break;
         case ')': add_token(self, RIGHT_PAREN, NULL);     break;
@@ -257,7 +259,7 @@ lexer lexer_create(struct lexer_src *source) {
 
 static void print_tokens(lexer *self) {
     printf("==========================\n");
-    printf("==========TOKENS==========\n");
+    printf("========= TOKENS =========\n");
     printf("==========================\n");
 
     for (int i = 0 ; i < self->tokens.size; i++) {

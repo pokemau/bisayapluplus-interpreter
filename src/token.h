@@ -16,6 +16,8 @@ typedef enum TokenType {
     DOLLAR,
     HASH,
 
+    NEWLINE,
+
     // Arithmetic Operators
     LEFT_PAREN,
     RIGHT_PAREN,
@@ -53,6 +55,7 @@ typedef enum TokenType {
     DAWAT,
     KUNG,
     WALA,
+    KUNG_WALA, KUNG_DILI,
     PUNDOK,
     ALANG_SA,
 
