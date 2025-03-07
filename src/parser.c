@@ -117,6 +117,9 @@ ast_node *parser_parse(parser *self) {
 static ast_node *parse_statement(parser *self) {
     token *t = peek(self);
 
+    printf("CURR TOKEN: ");
+    print_token(t);
+
     if (match(self, MUGNA)) {
         ast_node *t = parse_var_decl(self);
         printf("%d\n", t->type);
@@ -127,14 +130,14 @@ static ast_node *parse_statement(parser *self) {
         return parse_assignment(self);
     } else if (match(self, ALANG_SA)) {
         return parse_for(self);
+    } else if (match(self, DAWAT)) {
+        return parse_input(self);
     }
 
     // } else if (match(self, DAWAT)) {
     //     return parse_input(self);
     // } else if (match(self, KUNG)) {
     //     return parse_if(self);
-    // } else if (match(self, ALANG_SA)) {
-    //     return parse_for(self);
     // } else if (match(self, MINUS) && peek_next(self)->type == MINUS) {
     //     advance(self); // Skip -- comment
     //     advance(self);
@@ -251,22 +254,32 @@ static ast_node *parse_print(parser *self) {
     return print;
 }
 
-// Parse input: DAWAT: <var>[, <var>]*
 static ast_node *parse_input(parser *self) {
-    advance(self); // Skip DAWAT
+    advance(self);
     expect(self, COLON, "Expected ':' after 'DAWAT'");
 
     ast_node *input = new_ast_node(AST_INPUT);
     token *vars = NULL;
+
+    int temp_size = 10;
+    vars = malloc(sizeof(token) * temp_size);
+    if (!vars) {
+        fprintf(stderr, "Failed to allocate vars [parse_input]");
+        exit(1);
+    }
     int var_count = 0;
 
-    do {
+    while (true) {
         token *var = expect(self, IDENTIFIER, "Expected variable name");
-        vars = realloc(vars, sizeof(token) * (var_count + 1));
         vars[var_count++] = *var;
-        if (match(self, COMMA))
-            advance(self);
-    } while (!match(self, NEWLINE) && peek(self));
+        if (var_count == temp_size) {
+            vars = realloc(vars, sizeof(token) * (var_count + 10));
+            temp_size += 10;
+        }
+        if (match(self, NEWLINE))
+            break;
+        expect(self, COMMA, "EXPECT COMMA");
+    }
 
     input->input.vars = vars;
     input->input.var_count = var_count;
