@@ -13,7 +13,7 @@ typedef struct parser {
 parser parser_create(token_list *tokens);
 
 
-void print_ast(ast_node *node, int depth);
+void ast_print(ast_node *node, int depth);
 ast_node *parser_parse(parser *self);
 
 // void parse(parser *self);

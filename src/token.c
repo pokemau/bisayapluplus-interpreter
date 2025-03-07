@@ -158,6 +158,12 @@ void print_token(token *t) {
     case KUNG_DILI:
         text = "KUNG_DILI";
         break;
+//    case INCREMENT:
+//        text = "INCREMENT";
+//        break;
+//    case DECREMENT:
+//        text = "DECREMENT";
+//        break;
     }
 
     printf("[%d] %-20s %s\n", t->line, text, t->lexeme);

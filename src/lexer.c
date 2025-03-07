@@ -204,7 +204,13 @@ static void lexer_scan_token(lexer *self) {
         case '&': add_token(self, AMPERSAND, NULL);       break;
         case '$': add_token(self, DOLLAR, NULL);          break;
         case '#': add_token(self, HASH, NULL);            break;
-        case '+': add_token(self, PLUS, NULL);            break;
+        case '+':
+            if (match(self, '+')) {
+                add_token(self, INCREMENT, NULL);
+            } else {
+                add_token(self, PLUS, NULL);
+            }
+            break;
         case ';': add_token(self, SEMICOLON, NULL);       break;
         case ':': add_token(self, COLON, NULL);           break;
         case '*': add_token(self, STAR, NULL);            break;

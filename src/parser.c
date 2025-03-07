@@ -30,7 +30,7 @@ parser parser_create(token_list *tokens) {
     return self;
 }
 
-static void error(parser *self, const char *message) {
+static void parser_error(parser *self, const char *message) {
     token *current = &self->tokens->list[self->current];
     fprintf(stderr, "Syntax Error at line %d: %s\n", current->line, message);
     exit(1);
@@ -52,12 +52,12 @@ static token *advance(parser *self) {
         return NULL;
     return &self->tokens->list[self->current++];
 }
-static token *consume(parser *self, TokenType type, const char *message) {
+static token *expect(parser *self, TokenType type, const char *message) {
     token *t = peek(self);
     if (t && t->type == type) {
         return advance(self);
     }
-    error(self, message);
+    parser_error(self, message);
     return NULL;
 }
 
@@ -76,7 +76,7 @@ static ast_node *new_ast_node(ast_node_type type) {
 
 ast_node *parser_parse(parser *self) {
     ast_node *program = new_ast_node(AST_PROGRAM);
-    consume(self, SUGOD, "Expected 'SUGOD' at start of program");
+    expect(self, SUGOD, "Expected 'SUGOD' at start of program");
 
     ast_node *stmts = NULL;
     int temp_size = 10;
@@ -95,7 +95,7 @@ ast_node *parser_parse(parser *self) {
         }
 
         ast_node *stmt = parse_statement(self);
-//        ast_node *stmt = parse_declaration(self);
+        //        ast_node *stmt = parse_declaration(self);
         stmts[stmt_count] = *stmt;
         stmt_count++;
 
@@ -105,7 +105,7 @@ ast_node *parser_parse(parser *self) {
         }
     }
 
-    consume(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
+    expect(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
 
     program->program.statements = realloc(stmts, sizeof(ast_node) * stmt_count);
     program->program.stmt_count = stmt_count;
@@ -125,6 +125,8 @@ static ast_node *parse_statement(parser *self) {
         return parse_print(self);
     } else if (match(self, IDENTIFIER)) {
         return parse_assignment(self);
+    } else if (match(self, ALANG_SA)) {
+        return parse_for(self);
     }
 
     // } else if (match(self, DAWAT)) {
@@ -133,8 +135,6 @@ static ast_node *parse_statement(parser *self) {
     //     return parse_if(self);
     // } else if (match(self, ALANG_SA)) {
     //     return parse_for(self);
-    // } else if (match(self, IDENTIFIER)) {
-    //     return parse_assignment(self);
     // } else if (match(self, MINUS) && peek_next(self)->type == MINUS) {
     //     advance(self); // Skip -- comment
     //     advance(self);
@@ -142,7 +142,7 @@ static ast_node *parse_statement(parser *self) {
     //         advance(self);
     //     return parse_statement(self); // Recursive call for next statement
     // }
-    error(self, "Unexpected token in statement");
+    parser_error(self, "Unexpected token in statement");
     return NULL;
 }
 
@@ -152,7 +152,7 @@ static ast_node *parse_var_decl(parser *self) {
     TokenType d_type = advance(self)->type;
     if (d_type != NUMERO && d_type != LETRA && d_type != TINUOD &&
         d_type != TIPIK) {
-        error(self, "Expected data type after 'MUGNA'");
+        parser_error(self, "Expected data type after 'MUGNA'");
     }
 
     ast_node *decl = new_ast_node(AST_VAR_DECL);
@@ -165,7 +165,7 @@ static ast_node *parse_var_decl(parser *self) {
     int name_count = 0;
 
     while (!match(self, NEWLINE)) {
-        token *name = consume(self, IDENTIFIER, "Expected: variable name");
+        token *name = expect(self, IDENTIFIER, "Expected: variable name");
 
         names[name_count] = *name;
 
@@ -201,7 +201,7 @@ static ast_node *parse_var_decl(parser *self) {
 
 static ast_node *parse_assignment(parser *self) {
     token *var_name = advance(self);
-    consume(self, EQUAL, "Expected '=' after variable name");
+    expect(self, EQUAL, "Expected '=' after variable name");
 
     ast_node *expr = NULL;
 
@@ -219,7 +219,7 @@ static ast_node *parse_assignment(parser *self) {
 
 static ast_node *parse_print(parser *self) {
     advance(self);
-    consume(self, COLON, "Expected ':' after 'IPAKITA'");
+    expect(self, COLON, "Expected ':' after 'IPAKITA'");
 
     ast_node *print = new_ast_node(AST_PRINT);
     ast_node **exprs = NULL;
@@ -254,14 +254,14 @@ static ast_node *parse_print(parser *self) {
 // Parse input: DAWAT: <var>[, <var>]*
 static ast_node *parse_input(parser *self) {
     advance(self); // Skip DAWAT
-    consume(self, COLON, "Expected ':' after 'DAWAT'");
+    expect(self, COLON, "Expected ':' after 'DAWAT'");
 
     ast_node *input = new_ast_node(AST_INPUT);
     token *vars = NULL;
     int var_count = 0;
 
     do {
-        token *var = consume(self, IDENTIFIER, "Expected variable name");
+        token *var = expect(self, IDENTIFIER, "Expected variable name");
         vars = realloc(vars, sizeof(token) * (var_count + 1));
         vars[var_count++] = *var;
         if (match(self, COMMA))
@@ -274,8 +274,8 @@ static ast_node *parse_input(parser *self) {
 }
 
 static ast_node *parse_block(parser *self) {
-    consume(self, PUNDOK, "Expected 'PUNDOK'");
-    consume(self, LEFT_BRACE, "Expected '{' after 'PUNDOK'");
+    expect(self, PUNDOK, "Expected 'PUNDOK'");
+    expect(self, LEFT_BRACE, "Expected '{' after 'PUNDOK'");
 
     ast_node *block = new_ast_node(AST_BLOCK);
     ast_node **stmts = NULL;
@@ -291,7 +291,7 @@ static ast_node *parse_block(parser *self) {
         stmts[stmt_count++] = stmt;
     }
 
-    consume(self, RIGHT_BRACE, "Expected '}' after block");
+    expect(self, RIGHT_BRACE, "Expected '}' after block");
     block->block.statements = *stmts;
     block->block.stmt_count = stmt_count;
     return block;
@@ -299,9 +299,9 @@ static ast_node *parse_block(parser *self) {
 
 static ast_node *parse_if(parser *self) {
     advance(self); // Skip KUNG
-    consume(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
+    expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
     ast_node *condition = parse_expression(self);
-    consume(self, RIGHT_PAREN, "Expected ')' after condition");
+    expect(self, RIGHT_PAREN, "Expected ')' after condition");
 
     ast_node *then_block = parse_block(self);
     ast_node *else_block = NULL;
@@ -311,9 +311,9 @@ static ast_node *parse_if(parser *self) {
         else_block = parse_block(self);
     } else if (match(self, KUNG_DILI)) {
         advance(self);
-        consume(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
+        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
         ast_node *elif_cond = parse_expression(self);
-        consume(self, RIGHT_PAREN, "Expected ')' after condition");
+        expect(self, RIGHT_PAREN, "Expected ')' after condition");
         ast_node *elif_block = parse_block(self);
 
         ast_node *if_node = new_ast_node(AST_IF);
@@ -335,17 +335,38 @@ static ast_node *parse_if(parser *self) {
 }
 
 static ast_node *parse_for(parser *self) {
-    advance(self); // Skip ALANG SA
-    consume(self, LEFT_PAREN, "Expected '(' after 'ALANG SA'");
+    advance(self);
+    expect(self, LEFT_PAREN, "Expected '(' after ALANG SA");
 
-    ast_node *init = parse_assignment(self);
-    consume(self, COMMA, "Expected ',' after initialization");
+    ast_node *init = NULL;
 
+    if (match(self, MUGNA)) {
+        init = parse_var_decl(self);
+    } else if (match(self, IDENTIFIER)) {
+        init = parse_assignment(self);
+    }
+
+    expect(self, COMMA, "Expected ',' after initialization");
     ast_node *condition = parse_expression(self);
-    consume(self, COMMA, "Expected ',' after condition");
+
+    expect(self, COMMA, "Expected ',' after condition");
 
     ast_node *update = parse_assignment(self);
-    consume(self, RIGHT_PAREN, "Expected ')' after update");
+
+    // handle increment operator (ctr++)
+//    if (peek(self)->type == IDENTIFIER && peek_next(self)->type == INCREMENT) {
+//        token *var_name = advance(self);
+//        token *op = expect(self, INCREMENT, "Expected '++'");
+//        update = new_ast_node(AST_UNARY);
+//        update->unary.op = op;
+//        update->unary.expr = new_ast_node(AST_VARIABLE);
+//        update->unary.expr->variable.name = var_name;
+//    } else {
+//        update = parse_expression(self);
+//    }
+
+    expect(self, RIGHT_PAREN, "Expected ')' after update");
+    expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
 
     ast_node *body = parse_block(self);
 
@@ -409,6 +430,8 @@ static int get_precedence(TokenType type) {
 static ast_node *parse_unary(parser *self) {
     if (match(self, PLUS) || match(self, MINUS) || match(self, DILI)) {
         token *op = advance(self);
+        printf("TOKE: ");
+        print_token(op);
         ast_node *expr = parse_unary(self);
         ast_node *unary = new_ast_node(AST_UNARY);
         unary->unary.op = op;
@@ -421,7 +444,7 @@ static ast_node *parse_unary(parser *self) {
 static ast_node *parse_primary(parser *self) {
     token *t = peek(self);
     if (!t)
-        error(self, "Unexpected end of input");
+        parser_error(self, "Unexpected end of input");
 
     if (match(self, NUMBER) || match(self, STRING) || match(self, TRUE) ||
         match(self, FALSE)) {
@@ -435,12 +458,12 @@ static ast_node *parse_primary(parser *self) {
     } else if (match(self, LEFT_PAREN)) {
         advance(self);
         ast_node *expr = parse_expression(self);
-        consume(self, RIGHT_PAREN, "Expected ')' after expression");
+        expect(self, RIGHT_PAREN, "Expected ')' after expression");
         return expr;
     } else if (match(self, LEFT_BRACKET)) { // Escape code [#]
         advance(self);                      // Consume [
-        consume(self, HASH, "Expected '#' after '[' in escape code");
-        consume(self, RIGHT_BRACKET, "Expected ']' after '#'");
+        expect(self, HASH, "Expected '#' after '[' in escape code");
+        expect(self, RIGHT_BRACKET, "Expected ']' after '#'");
         ast_node *literal = new_ast_node(AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));
         literal->literal.value->type = HASH;
@@ -457,6 +480,6 @@ static ast_node *parse_primary(parser *self) {
         return literal;
     }
 
-    error(self, "Expected expression");
+    parser_error(self, "Expected expression");
     return NULL;
 }

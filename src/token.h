@@ -60,7 +60,10 @@ typedef enum TokenType {
     ALANG_SA,
 
     // EOF
-    EOFILE
+    EOFILE,
+
+//    INCREMENT,
+//    DECREMENT,
 } TokenType;
 
 
@@ -114,7 +117,9 @@ static const char *token_val[] = {
     "KUNG_DILI",
     "PUNDOK",
     "ALANG_SA",
-    "EOFIL"
+    "EOFILE",
+//    "INCREMENT",
+//    "DECREMENT",
 };
 
 
