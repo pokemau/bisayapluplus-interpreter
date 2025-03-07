@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 static ast_node *parse_for(parser *self);
 static ast_node *parse_if(parser *self);
@@ -27,6 +28,7 @@ parser parser_create(token_list *tokens) {
     parser self;
     self.tokens = tokens;
     self.current = 0;
+    self.head = &tokens->list[0];
     return self;
 }
 
@@ -50,7 +52,9 @@ static token *peek_next(parser *self) {
 static token *advance(parser *self) {
     if (self->current >= self->tokens->size)
         return NULL;
-    return &self->tokens->list[self->current++];
+    token *res = &self->tokens->list[self->current++];
+    self->head = &self->tokens->list[self->current];
+    return res;
 }
 static token *expect(parser *self, TokenType type, const char *message) {
     token *t = peek(self);
@@ -66,7 +70,7 @@ static bool match(parser *self, TokenType type) {
     return t && t->type == type;
 }
 
-static ast_node *new_ast_node(ast_node_type type) {
+static ast_node *ast_new_node(ast_node_type type) {
     ast_node *node = (ast_node *)malloc(sizeof(ast_node));
     if (!node)
         bpp_error(0, "Failed to allocate AST node");
@@ -75,7 +79,7 @@ static ast_node *new_ast_node(ast_node_type type) {
 }
 
 ast_node *parser_parse(parser *self) {
-    ast_node *program = new_ast_node(AST_PROGRAM);
+    ast_node *program = ast_new_node(AST_PROGRAM);
     expect(self, SUGOD, "Expected 'SUGOD' at start of program");
 
     ast_node *stmts = NULL;
@@ -121,9 +125,7 @@ static ast_node *parse_statement(parser *self) {
     print_token(t);
 
     if (match(self, MUGNA)) {
-        ast_node *t = parse_var_decl(self);
-        printf("%d\n", t->type);
-        return t;
+        return parse_var_decl(self);
     } else if (match(self, IPAKITA)) {
         return parse_print(self);
     } else if (match(self, IDENTIFIER)) {
@@ -132,10 +134,10 @@ static ast_node *parse_statement(parser *self) {
         return parse_for(self);
     } else if (match(self, DAWAT)) {
         return parse_input(self);
+    } else if (match(self, KUNG)) {
+        return parse_if(self);
     }
 
-    // } else if (match(self, DAWAT)) {
-    //     return parse_input(self);
     // } else if (match(self, KUNG)) {
     //     return parse_if(self);
     // } else if (match(self, MINUS) && peek_next(self)->type == MINUS) {
@@ -158,7 +160,7 @@ static ast_node *parse_var_decl(parser *self) {
         parser_error(self, "Expected data type after 'MUGNA'");
     }
 
-    ast_node *decl = new_ast_node(AST_VAR_DECL);
+    ast_node *decl = ast_new_node(AST_VAR_DECL);
 
     // TODO: implement allocator functions
     int temp_size = 10;
@@ -214,7 +216,7 @@ static ast_node *parse_assignment(parser *self) {
         expr = parse_expression(self);
     }
 
-    ast_node *assign = new_ast_node(AST_ASSIGNMENT);
+    ast_node *assign = ast_new_node(AST_ASSIGNMENT);
     assign->assignment.expr = expr;
     assign->assignment.var = var_name;
     return assign;
@@ -224,7 +226,7 @@ static ast_node *parse_print(parser *self) {
     advance(self);
     expect(self, COLON, "Expected ':' after 'IPAKITA'");
 
-    ast_node *print = new_ast_node(AST_PRINT);
+    ast_node *print = ast_new_node(AST_PRINT);
     ast_node **exprs = NULL;
     int temp_size = 10;
     exprs = malloc(sizeof(ast_node *) * temp_size);
@@ -258,7 +260,7 @@ static ast_node *parse_input(parser *self) {
     advance(self);
     expect(self, COLON, "Expected ':' after 'DAWAT'");
 
-    ast_node *input = new_ast_node(AST_INPUT);
+    ast_node *input = ast_new_node(AST_INPUT);
     token *vars = NULL;
 
     int temp_size = 10;
@@ -290,7 +292,7 @@ static ast_node *parse_block(parser *self) {
     expect(self, PUNDOK, "Expected 'PUNDOK'");
     expect(self, LEFT_BRACE, "Expected '{' after 'PUNDOK'");
 
-    ast_node *block = new_ast_node(AST_BLOCK);
+    ast_node *block = ast_new_node(AST_BLOCK);
     ast_node **stmts = NULL;
     int stmt_count = 0;
 
@@ -305,46 +307,93 @@ static ast_node *parse_block(parser *self) {
     }
 
     expect(self, RIGHT_BRACE, "Expected '}' after block");
-    block->block.statements = *stmts;
+    if (stmts) {
+        block->block.statements = *stmts;
+    }
     block->block.stmt_count = stmt_count;
     return block;
 }
 
 static ast_node *parse_if(parser *self) {
-    advance(self); // Skip KUNG
+// struct {
+//     ast_node *condition;
+//     ast_node *then_block;
+//     ast_node *else_block;
+// } if_stmt;
+
+    advance(self);
+
     expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
+
     ast_node *condition = parse_expression(self);
-    expect(self, RIGHT_PAREN, "Expected ')' after condition");
+
+    expect(self, RIGHT_PAREN, "Expected ')' after 'KUNG'");
+    expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
 
     ast_node *then_block = parse_block(self);
-    ast_node *else_block = NULL;
+    ast_print(then_block, 0);
 
-    if (match(self, KUNG_WALA)) {
-        advance(self);
-        else_block = parse_block(self);
-    } else if (match(self, KUNG_DILI)) {
-        advance(self);
-        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
-        ast_node *elif_cond = parse_expression(self);
-        expect(self, RIGHT_PAREN, "Expected ')' after condition");
-        ast_node *elif_block = parse_block(self);
-
-        ast_node *if_node = new_ast_node(AST_IF);
-        if_node->if_stmt.condition = elif_cond;
-        if_node->if_stmt.then_block = elif_block;
-
-        if (match(self, KUNG_WALA)) {
-            advance(self);
-            if_node->if_stmt.else_block = parse_block(self);
-        }
-        else_block = if_node;
-    }
-
-    ast_node *if_stmt = new_ast_node(AST_IF);
+    ast_node *if_stmt = ast_new_node(AST_IF);
     if_stmt->if_stmt.condition = condition;
     if_stmt->if_stmt.then_block = then_block;
-    if_stmt->if_stmt.else_block = else_block;
+
+    if (match(self, KUNG_DILI)) {
+        advance(self);
+
+        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
+        ast_node *elif_condition = parse_expression(self);
+        expect(self, RIGHT_PAREN, "Expected ')' after 'KUNG'");
+        ast_node *elif_block = parse_block(self);
+
+        ast_node *elif_stmt = ast_new_node(AST_ELSE_IF);
+        elif_stmt->if_stmt.condition = elif_condition;
+        elif_stmt->if_stmt.then_block = elif_block;
+
+        // if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
+        //     elif_stmt->if_stmt.else_block = parse_if(self);
+        // }
+        if_stmt->if_stmt.else_block = elif_stmt;
+    } else if (match(self, KUNG_WALA)) {
+
+    }
+
     return if_stmt;
+    
+//    advance(self);
+//
+//    expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
+//    ast_node *condition = parse_expression(self);
+//    expect(self, RIGHT_PAREN, "Expected ')' after condition");
+//
+//    ast_node *then_block = parse_block(self);
+//    ast_node *else_block = NULL;
+//
+//    if (match(self, KUNG_WALA)) {
+//        advance(self);
+//        else_block = parse_block(self);
+//    } else if (match(self, KUNG_DILI)) {
+//        advance(self);
+//        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
+//        ast_node *elif_cond = parse_expression(self);
+//        expect(self, RIGHT_PAREN, "Expected ')' after condition");
+//        ast_node *elif_block = parse_block(self);
+//
+//        ast_node *if_node = new_ast_node(AST_IF);
+//        if_node->if_stmt.condition = elif_cond;
+//        if_node->if_stmt.then_block = elif_block;
+//
+//        if (match(self, KUNG_WALA)) {
+//            advance(self);
+//            if_node->if_stmt.else_block = parse_block(self);
+//        }
+//        else_block = if_node;
+//    }
+//
+//    ast_node *if_stmt = new_ast_node(AST_IF);
+//    if_stmt->if_stmt.condition = condition;
+//    if_stmt->if_stmt.then_block = then_block;
+//    if_stmt->if_stmt.else_block = else_block;
+//    return if_stmt;
 }
 
 static ast_node *parse_for(parser *self) {
@@ -383,7 +432,7 @@ static ast_node *parse_for(parser *self) {
 
     ast_node *body = parse_block(self);
 
-    ast_node *for_stmt = new_ast_node(AST_FOR);
+    ast_node *for_stmt = ast_new_node(AST_FOR);
     for_stmt->for_stmt.init = init;
     for_stmt->for_stmt.condition = condition;
     for_stmt->for_stmt.update = update;
@@ -407,7 +456,7 @@ static ast_node *parse_binary(parser *self, int precedence) {
         advance(self);
         ast_node *right = parse_binary(self, op_precedence);
 
-        ast_node *binary = new_ast_node(AST_BINARY);
+        ast_node *binary = ast_new_node(AST_BINARY);
         binary->binary.op = op;
         binary->binary.left = left;
         binary->binary.right = right;
@@ -446,7 +495,7 @@ static ast_node *parse_unary(parser *self) {
         printf("TOKE: ");
         print_token(op);
         ast_node *expr = parse_unary(self);
-        ast_node *unary = new_ast_node(AST_UNARY);
+        ast_node *unary = ast_new_node(AST_UNARY);
         unary->unary.op = op;
         unary->unary.expr = expr;
         return unary;
@@ -461,11 +510,11 @@ static ast_node *parse_primary(parser *self) {
 
     if (match(self, NUMBER) || match(self, STRING) || match(self, TRUE) ||
         match(self, FALSE)) {
-        ast_node *literal = new_ast_node(AST_LITERAL);
+        ast_node *literal = ast_new_node(AST_LITERAL);
         literal->literal.value = advance(self);
         return literal;
     } else if (match(self, IDENTIFIER)) {
-        ast_node *var = new_ast_node(AST_VARIABLE);
+        ast_node *var = ast_new_node(AST_VARIABLE);
         var->variable.name = advance(self);
         return var;
     } else if (match(self, LEFT_PAREN)) {
@@ -477,7 +526,7 @@ static ast_node *parse_primary(parser *self) {
         advance(self);                      // Consume [
         expect(self, HASH, "Expected '#' after '[' in escape code");
         expect(self, RIGHT_BRACKET, "Expected ']' after '#'");
-        ast_node *literal = new_ast_node(AST_LITERAL);
+        ast_node *literal = ast_new_node(AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));
         literal->literal.value->type = HASH;
         literal->literal.value->lexeme = "#";
@@ -485,7 +534,7 @@ static ast_node *parse_primary(parser *self) {
         return literal;
     } else if (match(self, DOLLAR)) { // Newline ($)
         advance(self);
-        ast_node *literal = new_ast_node(AST_LITERAL);
+        ast_node *literal = ast_new_node(AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));
         literal->literal.value->type = DOLLAR;
         literal->literal.value->lexeme = "$";

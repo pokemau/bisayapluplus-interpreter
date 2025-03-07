@@ -19,7 +19,7 @@ void run(const char *data, size_t total) {
     printf("=========================\n");
     printf("========= AST ===========\n");
     printf("=========================\n");
-    print_ast(ast, 0);
+    ast_print(ast, 0);
 
     //    i = interpreter_create(&p);
     //    interpreter_run(&i,ast);

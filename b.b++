@@ -1,9 +1,43 @@
 SUGOD
-    MUGNA NUMERO x, y, z=5
-    MUGNA LETRA a_1='n'
-    MUGNA TINUOD t="OO"
-    x=y=4
-    a_1='c'
-    -- this is a comment
-    IPAKITA: x & t & z & $ & a_1 & [#] & "last"
+
+KUNG (x >= 4)
+PUNDOK {
+
+} 
+KUNG DILI (x == 4)
+PUNDOK {
+
+}
+-- KUNG WALA
+-- PUNDOK {
+--     
+-- }
+
+
+
+-- ALANG SA (ctr=1, ctr<=10, ctr=ctr+1)
+-- PUNDOK{
+--     IPAKITA: a
+-- }
+
+-- KUNG (x=4)
+-- PUNDOK{
+-- }
+-- 
+-- KUNG DILI (x = 10)
+-- PUNDOK{
+-- }
+-- 
+-- KUNG WALA
+-- PUNDOK{
+-- }
+
+--DAWAT: x, z
+-- MUGNA NUMERO x,y
+-- Syntax:
+-- DAWAT: <variableName>[,<variableName>]*
+-- Sample use:
+-- It means in the screen you have to input two values separated by comma(,)
+
+
 KATAPUSAN

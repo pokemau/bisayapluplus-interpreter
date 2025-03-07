@@ -8,6 +8,7 @@ typedef struct parser {
     token_list *tokens;
     int current;
     int token_count;
+    token *head;
 } parser;
 
 parser parser_create(token_list *tokens);

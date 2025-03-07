@@ -9,7 +9,9 @@ typedef enum ast_node_type {
     AST_ASSIGNMENT, // var assignments
     AST_PRINT,      // IPAKITA statements
     AST_INPUT,      // DAWAT statements
-    AST_IF,         // KUNG, KUNG WALA, KUNG DILI
+    AST_IF,         // KUNG
+    AST_ELSE_IF,    // KUNG DILI
+    AST_ELSE,       // KUNG WALA
     AST_FOR,        // ALAG SA
     AST_BLOCK,      // PUNDOK
     AST_BINARY,     // Binary operations (+, -, /, *)
