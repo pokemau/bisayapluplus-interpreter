@@ -16,6 +16,8 @@ typedef enum TokenType {
     DOLLAR,
     HASH,
 
+    NEWLINE,
+
     // Arithmetic Operators
     LEFT_PAREN,
     RIGHT_PAREN,
@@ -53,12 +55,72 @@ typedef enum TokenType {
     DAWAT,
     KUNG,
     WALA,
+    KUNG_WALA, KUNG_DILI,
     PUNDOK,
     ALANG_SA,
 
     // EOF
-    EOFILE
+    EOFILE,
+
+//    INCREMENT,
+//    DECREMENT,
 } TokenType;
+
+
+static const char *token_val[] = {
+    "LEFT_BRACE",
+    "RIGHT_BRACE",
+    "LEFT_BRACKET",
+    "RIGHT_BRACKET",
+    "COMMA",
+    "DOT",
+    "SEMICOLON",
+    "COLON",
+    "EQUAL",
+    "AMPERSAND",
+    "DOLLAR",
+    "HASH",
+    "NEWLINE",
+    "LEFT_PAREN",
+    "RIGHT_PAREN",
+    "STAR",
+    "SLASH",
+    "MODULO",
+    "PLUS",
+    "MINUS",
+    "GREATER",
+    "LESS",
+    "GREATER_EQUAL",
+    "LESS_EQUAL",
+    "EQUAL_EQUAL",
+    "NOT_EQUAL",
+    "UG",
+    "O",
+    "DILI",
+    "TRUE",
+    "FALSE",
+    "IDENTIFIER",
+    "STRING",
+    "NUMBER",
+    "NUMERO",
+    "LETRA",
+    "TIPIK",
+    "TINUOD",
+    "SUGOD",
+    "KATAPUSAN",
+    "MUGNA",
+    "IPAKITA",
+    "DAWAT",
+    "KUNG",
+    "WALA",
+    "KUNG_WALA",
+    "KUNG_DILI",
+    "PUNDOK",
+    "ALANG_SA",
+    "EOFILE",
+//    "INCREMENT",
+//    "DECREMENT",
+};
 
 
 typedef struct token {
@@ -72,6 +134,7 @@ typedef struct token {
     void *literal;
 } token;
 
+const char *token_print_type(TokenType t);
 TokenType get_token_type(const char *s);
 void print_token(token *t);
 

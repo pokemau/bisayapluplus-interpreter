@@ -1,19 +1,28 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
-
 #include "lexer.h"
+#include "ast.h"
 
-typedef struct Parser {
+typedef struct parser {
     token_list *tokens;
-    int curr;
-} Parser;
+    int current;
+    int token_count;
+    token *head;
+} parser;
 
-struct Parser parser_create(token_list *tokens) {
-    Parser self;
-    self.tokens = tokens;
-    self.curr = 0;
-    return self;
-}
+parser parser_create(token_list *tokens);
+
+
+void ast_print(ast_node *node, int depth);
+ast_node *parser_parse(parser *self);
+
+// void parse(parser *self);
+
+void ast_free(ast_node *node);
+
+// expr *parse_expression(parser *self);
+// expr *parse_equality(parser *self);
+
 
 #endif

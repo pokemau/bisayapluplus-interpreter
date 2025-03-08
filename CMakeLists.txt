@@ -10,4 +10,7 @@ add_executable(${PROJECT_NAME}
     src/lexer.c
     src/util.c
     src/token.c
+    src/parser.c
+    src/ast_printer.c
+#    src/interpreter.c
 )
