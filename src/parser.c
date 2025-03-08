@@ -138,15 +138,6 @@ static ast_node *parse_statement(parser *self) {
         return parse_if(self);
     }
 
-    // } else if (match(self, KUNG)) {
-    //     return parse_if(self);
-    // } else if (match(self, MINUS) && peek_next(self)->type == MINUS) {
-    //     advance(self); // Skip -- comment
-    //     advance(self);
-    //     while (!match(self, NEWLINE) && peek(self))
-    //         advance(self);
-    //     return parse_statement(self); // Recursive call for next statement
-    // }
     parser_error(self, "Unexpected token in statement");
     return NULL;
 }
@@ -372,13 +363,7 @@ static ast_node *parse_if(parser *self) {
 
     advance(self);
 
-    printf("CURRR:::::::: ");
-    print_token(peek(self));
-
     if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
-        printf("OR:::::::::::");
-        print_token(peek(self));
-
         if_stmt->if_stmt.else_block = parse_else(self);
     }
 
@@ -469,8 +454,6 @@ static int get_precedence(TokenType type) {
 static ast_node *parse_unary(parser *self) {
     if (match(self, PLUS) || match(self, MINUS) || match(self, DILI)) {
         token *op = advance(self);
-        printf("TOKE: ");
-        print_token(op);
         ast_node *expr = parse_unary(self);
         ast_node *unary = ast_new_node(AST_UNARY);
         unary->unary.op = op;
