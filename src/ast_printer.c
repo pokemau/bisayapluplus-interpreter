@@ -45,7 +45,6 @@ void ast_print(ast_node *node, int depth) {
             printf("UNKNOWN");
             break;
         }
-
         printf(", names: %d)\n", node->var_decl.name_count);
         for (int i = 0; i < node->var_decl.name_count; i++) {
             print_indent(depth + 1);
@@ -98,6 +97,29 @@ void ast_print(ast_node *node, int depth) {
         }
         break;
 
+    case AST_ELSE_IF:
+        printf("[ELSE_IF]\n");
+        print_indent(depth + 1);
+        printf("Condition:\n");
+        ast_print(node->if_stmt.condition, depth + 2);
+        print_indent(depth + 1);
+        printf("Then:\n");
+        ast_print(node->if_stmt.then_block, depth + 2);
+        if (node->if_stmt.else_block) {
+            print_indent(depth + 1);
+            printf("Else:\n");
+            ast_print(node->if_stmt.else_block, depth + 2);
+        }
+        break;
+
+    case AST_ELSE:
+        printf("[ELSE]\n");
+        print_indent(depth + 1);
+        printf("Then:\n");
+        ast_print(node->if_stmt.then_block, depth + 2);
+        // No condition or else_block for AST_ELSE
+        break;
+
     case AST_FOR:
         printf("[FOR]\n");
         print_indent(depth + 1);
@@ -140,7 +162,7 @@ void ast_print(ast_node *node, int depth) {
 
     case AST_LITERAL:
         printf("[LITERAL] (type: %s, value: %s)\n",
-               token_val[node->literal.value->type],
+               token_val[node->literal.value->type], // Assumes token_val array exists
                node->literal.value->lexeme);
         break;
 

@@ -171,8 +171,7 @@ void print_token(token *t) {
 
 TokenType get_token_type(const char *s) {
 
-    // TODO:
-    // optimize, use better data structure
+    // TODO: optimize, use better data structure
 
     TokenType res = IDENTIFIER;
 
@@ -202,6 +201,10 @@ TokenType get_token_type(const char *s) {
         res = DAWAT;
     } else if (strcmp(s, "KUNG") == 0) {
         res = KUNG;
+    } else if (strcmp(s, "KUNG WALA") == 0) {
+        res = KUNG_WALA;
+    } else if (strcmp(s, "KUNG DILI") == 0) {
+        res = KUNG_DILI;
     } else if (strcmp(s, "PUNDOK") == 0) {
         res = PUNDOK;
     } else if (strcmp(s, "ALANG SA") == 0) {

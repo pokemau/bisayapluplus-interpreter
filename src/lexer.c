@@ -17,7 +17,7 @@ static bool is_at_end(lexer *self) {
     return self->current >= self->source.len;
 }
 
-static char get_next_char(lexer *self) {
+static char advance(lexer *self) {
     return self->source.data[self->current++];
 }
 
@@ -91,7 +91,7 @@ static void add_token(lexer *self, TokenType type, void *literal) {
 static void scan_string(lexer *self) {
     // shit code, refactor
     while(peek(self) != '"' && !is_at_end(self)) {
-        get_next_char(self);
+        advance(self);
     }
 
     if (is_at_end(self)) {
@@ -110,13 +110,13 @@ static void scan_string(lexer *self) {
         add_token(self, STRING, (void*) text);
     }
 
-    get_next_char(self);
+    advance(self);
 }
 
 static void scan_char(lexer *self) {
     if (isalnum(peek(self)) && peek_next(self) == '\'') {
-        get_next_char(self);
-        get_next_char(self);
+        advance(self);
+        advance(self);
 
         const char *text = get_token_substring(self,
                                                self->start + 1,
@@ -130,7 +130,7 @@ static void scan_char(lexer *self) {
 static void scan_comment(lexer *self) {
     if (match(self, '-')) {
         while (peek(self) != '\n' && !is_at_end(self))
-            get_next_char(self);
+            advance(self);
     } else {
         add_token(self, MINUS, NULL);
     }
@@ -140,12 +140,12 @@ static void scan_comment(lexer *self) {
 static void scan_number(lexer *self) {
 
     while (isdigit(peek(self)))
-        get_next_char(self);
+        advance(self);
 
     if (peek(self) == '.' && isdigit(peek_next(self))) {
-        get_next_char(self);
+        advance(self);
         while(isdigit(peek(self)))
-            get_next_char(self);
+            advance(self);
     }
 
     const char *text = get_token_substring(self, self->start, self->current);
@@ -158,21 +158,43 @@ static void scan_number(lexer *self) {
 }
 
 static void scan_identifier(lexer *self) {
-    char c = get_next_char(self);
+    char c = advance(self);
     while (isalnum(c) || c == '_') {
-        c = get_next_char(self);
+        c = advance(self);
     }
     const char *text = get_token_substring(self, self->start, self->current-1);
 
     // check for ALANG SA
     if (strcmp(text, "ALANG") == 0) {
         if (peek(self) == 'S' && peek_next(self) == 'A') {
-            get_next_char(self);
-            c = get_next_char(self);
+            advance(self);
+            c = advance(self);
             text = get_token_substring(self, self->start, self->current-1);
             add_token(self, ALANG_SA, NULL);
             return;
         }
+    }
+
+    // check for KUNG DILI, KUNG WALA
+    if (strcmp(text, "KUNG") == 0) {
+        const char *kung_text = get_token_substring(self, self->current,
+                                                    self->current+4);
+        if(strcmp(kung_text, "DILI") == 0) {
+            advance(self);
+            advance(self);
+            advance(self);
+            advance(self);
+            add_token(self, KUNG_DILI, NULL);
+        } else if(strcmp(kung_text, "WALA") == 0) {
+            advance(self);
+            advance(self);
+            advance(self);
+            advance(self);
+            add_token(self, KUNG_WALA, NULL);
+        } else {
+            add_token(self, KUNG, NULL);
+        }
+        return;
     }
 
     self->current--;
@@ -180,7 +202,7 @@ static void scan_identifier(lexer *self) {
 }
 
 static void lexer_scan_token(lexer *self) {
-    char c = get_next_char(self);
+    char c = advance(self);
 
     switch(c) {
         case ' ':
@@ -281,7 +303,7 @@ void lexer_gen_tokens(lexer *self) {
         self->start = self->current;
     }
 
-    print_tokens(self);
+    // print_tokens(self);
 }
 
 

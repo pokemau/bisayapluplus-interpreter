@@ -6,7 +6,15 @@ PUNDOK {
 } 
 KUNG DILI (x == 4)
 PUNDOK {
-
+ 
+}
+KUNG DILI (x == 4)
+PUNDOK {
+ 
+}
+KUNG WALA
+PUNDOK {
+    
 }
 -- KUNG WALA
 -- PUNDOK {
@@ -14,11 +22,13 @@ PUNDOK {
 -- }
 
 
-
 -- ALANG SA (ctr=1, ctr<=10, ctr=ctr+1)
 -- PUNDOK{
 --     IPAKITA: a
 -- }
+
+
+
 
 -- KUNG (x=4)
 -- PUNDOK{

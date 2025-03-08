@@ -314,6 +314,40 @@ static ast_node *parse_block(parser *self) {
     return block;
 }
 
+static ast_node *parse_else(parser *self) {
+    if (match(self, KUNG_DILI)) {
+        advance(self);
+        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
+        ast_node *condition = parse_expression(self);
+        expect(self, RIGHT_PAREN, "Expected ')' after 'KUNG DILI' condition");
+        expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
+        ast_node *then_block = parse_block(self);
+
+
+        ast_node *stmt = ast_new_node(AST_ELSE_IF);
+        stmt->if_stmt.condition = condition;
+        stmt->if_stmt.then_block = then_block;
+
+        advance(self);
+
+        if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
+            stmt->if_stmt.else_block = parse_else(self);
+        }
+        return stmt;
+
+    } else if (match(self, KUNG_WALA)) {
+        printf("PARSE KUNG WALA:::::::::::::::\n");
+        advance(self);
+        expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
+        ast_node *block = parse_block(self);
+
+        ast_node *stmt = ast_new_node(AST_ELSE);
+        stmt->if_stmt.then_block = block;
+        return stmt;
+    }
+    return NULL;
+}
+
 static ast_node *parse_if(parser *self) {
 // struct {
 //     ast_node *condition;
@@ -331,69 +365,24 @@ static ast_node *parse_if(parser *self) {
     expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
 
     ast_node *then_block = parse_block(self);
-    ast_print(then_block, 0);
 
     ast_node *if_stmt = ast_new_node(AST_IF);
     if_stmt->if_stmt.condition = condition;
     if_stmt->if_stmt.then_block = then_block;
 
-    if (match(self, KUNG_DILI)) {
-        advance(self);
+    advance(self);
 
-        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
-        ast_node *elif_condition = parse_expression(self);
-        expect(self, RIGHT_PAREN, "Expected ')' after 'KUNG'");
-        ast_node *elif_block = parse_block(self);
+    printf("CURRR:::::::: ");
+    print_token(peek(self));
 
-        ast_node *elif_stmt = ast_new_node(AST_ELSE_IF);
-        elif_stmt->if_stmt.condition = elif_condition;
-        elif_stmt->if_stmt.then_block = elif_block;
+    if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
+        printf("OR:::::::::::");
+        print_token(peek(self));
 
-        // if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
-        //     elif_stmt->if_stmt.else_block = parse_if(self);
-        // }
-        if_stmt->if_stmt.else_block = elif_stmt;
-    } else if (match(self, KUNG_WALA)) {
-
+        if_stmt->if_stmt.else_block = parse_else(self);
     }
 
     return if_stmt;
-    
-//    advance(self);
-//
-//    expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'");
-//    ast_node *condition = parse_expression(self);
-//    expect(self, RIGHT_PAREN, "Expected ')' after condition");
-//
-//    ast_node *then_block = parse_block(self);
-//    ast_node *else_block = NULL;
-//
-//    if (match(self, KUNG_WALA)) {
-//        advance(self);
-//        else_block = parse_block(self);
-//    } else if (match(self, KUNG_DILI)) {
-//        advance(self);
-//        expect(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
-//        ast_node *elif_cond = parse_expression(self);
-//        expect(self, RIGHT_PAREN, "Expected ')' after condition");
-//        ast_node *elif_block = parse_block(self);
-//
-//        ast_node *if_node = new_ast_node(AST_IF);
-//        if_node->if_stmt.condition = elif_cond;
-//        if_node->if_stmt.then_block = elif_block;
-//
-//        if (match(self, KUNG_WALA)) {
-//            advance(self);
-//            if_node->if_stmt.else_block = parse_block(self);
-//        }
-//        else_block = if_node;
-//    }
-//
-//    ast_node *if_stmt = new_ast_node(AST_IF);
-//    if_stmt->if_stmt.condition = condition;
-//    if_stmt->if_stmt.then_block = then_block;
-//    if_stmt->if_stmt.else_block = else_block;
-//    return if_stmt;
 }
 
 static ast_node *parse_for(parser *self) {
@@ -414,18 +403,6 @@ static ast_node *parse_for(parser *self) {
     expect(self, COMMA, "Expected ',' after condition");
 
     ast_node *update = parse_assignment(self);
-
-    // handle increment operator (ctr++)
-//    if (peek(self)->type == IDENTIFIER && peek_next(self)->type == INCREMENT) {
-//        token *var_name = advance(self);
-//        token *op = expect(self, INCREMENT, "Expected '++'");
-//        update = new_ast_node(AST_UNARY);
-//        update->unary.op = op;
-//        update->unary.expr = new_ast_node(AST_VARIABLE);
-//        update->unary.expr->variable.name = var_name;
-//    } else {
-//        update = parse_expression(self);
-//    }
 
     expect(self, RIGHT_PAREN, "Expected ')' after update");
     expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
