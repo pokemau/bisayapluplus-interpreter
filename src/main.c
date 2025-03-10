@@ -5,6 +5,7 @@
 #include "token.h"
 #include "util.h"
 #include "parser.h"
+#include "util/dyn_arr.h"
 
 lexer s;
 parser p;
@@ -20,6 +21,9 @@ void run(const char *data, size_t total) {
     printf("========= AST ===========\n");
     printf("=========================\n");
     ast_print(ast, 0);
+
+    // TODO:
+    // Free allocated memory in parser
 
     //    i = interpreter_create(&p);
     //    interpreter_run(&i,ast);

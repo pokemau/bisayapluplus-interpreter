@@ -3,6 +3,8 @@
 #include "token.h"
 #include "util.h"
 
+#include "util/dyn_arr.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -82,15 +84,9 @@ ast_node *parser_parse(parser *self) {
     ast_node *program = ast_new_node(AST_PROGRAM);
     expect(self, SUGOD, "Expected 'SUGOD' at start of program");
 
-    ast_node *stmts = NULL;
-    int temp_size = 10;
-    stmts = malloc(sizeof(ast_node) * temp_size);
-    if (!stmts) {
-        fprintf(stderr, "STMTS ERROR\n");
-        exit(1);
-    }
 
-    int stmt_count = 0;
+    ast_node *stmts = dynarray_create(ast_node);
+
     while (!match(self, KATAPUSAN)) {
 
         if (match(self, NEWLINE)) {
@@ -99,20 +95,12 @@ ast_node *parser_parse(parser *self) {
         }
 
         ast_node *stmt = parse_statement(self);
-        //        ast_node *stmt = parse_declaration(self);
-        stmts[stmt_count] = *stmt;
-        stmt_count++;
-
-        if (stmt_count == temp_size) {
-            stmts = realloc(stmts, sizeof(ast_node) * (stmt_count + 10));
-            temp_size += 10;
-        }
+        dynarray_push(stmts, *stmt);
     }
 
     expect(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
 
-    program->program.statements = realloc(stmts, sizeof(ast_node) * stmt_count);
-    program->program.stmt_count = stmt_count;
+    program->program.stmt_count = dynarray_length(stmts);
     program->program.statements = stmts;
 
     return program;
@@ -156,6 +144,9 @@ static ast_node *parse_var_decl(parser *self) {
     // TODO: implement allocator functions
     int temp_size = 10;
 
+//    token *names = dynarray_create(token);
+//    ast_node **inits = dynarray_create(ast_node *);
+
     token *names = malloc(sizeof(token) * temp_size);
     ast_node **inits = malloc(sizeof(ast_node *) * temp_size);
     int name_count = 0;
@@ -165,28 +156,32 @@ static ast_node *parse_var_decl(parser *self) {
 
         names[name_count] = *name;
 
+        //dynarray_push(names, *name);
+
         ast_node *init = NULL;
         if (match(self, EQUAL)) {
             advance(self);
             init = parse_expression(self);
         }
 
-        inits[name_count] = init;
-        name_count++;
+//        dynarray_push(inits, init);
 
-        if (name_count == temp_size) {
-            names = realloc(names, sizeof(token) * (name_count + 10));
-            inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
-            temp_size += 10;
-        }
+         inits[name_count] = init;
+         name_count++;
+
+         if (name_count == temp_size) {
+             names = realloc(names, sizeof(token) * (name_count + 10));
+             inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
+             temp_size += 10;
+         }
 
         if (match(self, COMMA)) {
             advance(self);
         }
     }
 
-    names = realloc(names, sizeof(token) * name_count);
-    inits = realloc(inits, sizeof(ast_node *) * name_count);
+    // names = realloc(names, sizeof(token) * name_count);
+    // inits = realloc(inits, sizeof(ast_node *) * name_count);
 
     decl->var_decl.names = names;
     decl->var_decl.inits = inits;
@@ -210,6 +205,7 @@ static ast_node *parse_assignment(parser *self) {
     ast_node *assign = ast_new_node(AST_ASSIGNMENT);
     assign->assignment.expr = expr;
     assign->assignment.var = var_name;
+
     return assign;
 }
 
@@ -327,7 +323,6 @@ static ast_node *parse_else(parser *self) {
         return stmt;
 
     } else if (match(self, KUNG_WALA)) {
-        printf("PARSE KUNG WALA:::::::::::::::\n");
         advance(self);
         expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
         ast_node *block = parse_block(self);

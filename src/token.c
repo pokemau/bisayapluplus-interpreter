@@ -4,6 +4,7 @@
 #include <string.h>
 
 void print_token(token *t) {
+    printf("[%d] %-20s %s\n", t->line, token_val[t->type], t->lexeme);
 
     const char *text;
 
@@ -166,7 +167,7 @@ void print_token(token *t) {
 //        break;
     }
 
-    printf("[%d] %-20s %s\n", t->line, text, t->lexeme);
+//    printf("[%d] %-21s %s\n", t->line, text, t->lexeme);
 }
 
 TokenType get_token_type(const char *s) {
