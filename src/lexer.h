@@ -14,15 +14,16 @@ typedef struct token_list {
     token *list;
 } token_list;
 
-typedef struct lexer {
-    lexer_src source;
+typedef struct Lexer {
+//    lexer_src source;
+    const char *source;
     token_list tokens;
     int start;
     int current;
     int line;
-} lexer;
+} Lexer;
 
-lexer lexer_create(lexer_src *source);
-void lexer_gen_tokens(lexer *self);
+Lexer lexer_create(lexer_src *source);
+void lexer_gen_tokens(Lexer *self);
 
 #endif

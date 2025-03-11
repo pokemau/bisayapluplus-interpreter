@@ -5,10 +5,10 @@
 #include "token.h"
 #include "util.h"
 #include "parser.h"
-#include "util/dyn_arr.h"
+#include <stdbool.h>
 
-lexer s;
-parser p;
+Lexer s;
+Parser p;
 
 void run(const char *data, size_t total) {
     s = lexer_create(&(lexer_src){.len = total, .data = data});

@@ -14,6 +14,8 @@ add_executable(${PROJECT_NAME}
     src/ast_printer.c
     src/value.c
     src/environment.c
+    src/ast.c
 
     src/util/dyn_arr.c
+    src/util/error_handler.c
 )

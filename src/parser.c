@@ -11,54 +11,54 @@
 #include <stdio.h>
 #include <string.h>
 
-static ast_node *parse_for(parser *self);
-static ast_node *parse_if(parser *self);
-static ast_node *parse_block(parser *self);
-static ast_node *parse_input(parser *self);
-static ast_node *parse_var_decl(parser *self);
-static ast_node *parse_binary(parser *self, int precedence);
-static ast_node *parse_unary(parser *self);
-static ast_node *parse_print(parser *self);
-static ast_node *parse_primary(parser *self);
-static ast_node *parse_assignment(parser *self);
+static ast_node *parse_for(Parser *self);
+static ast_node *parse_if(Parser *self);
+static ast_node *parse_block(Parser *self);
+static ast_node *parse_input(Parser *self);
+static ast_node *parse_var_decl(Parser *self);
+static ast_node *parse_binary(Parser *self, int precedence);
+static ast_node *parse_unary(Parser *self);
+static ast_node *parse_print(Parser *self);
+static ast_node *parse_primary(Parser *self);
+static ast_node *parse_assignment(Parser *self);
 static int get_precedence(TokenType type);
 
-static ast_node *parse_statement(parser *self);
-static ast_node *parse_expression(parser *self);
+static ast_node *parse_statement(Parser *self);
+static ast_node *parse_expression(Parser *self);
 
-parser parser_create(token_list *tokens) {
-    parser self;
+Parser parser_create(token_list *tokens) {
+    Parser self;
     self.tokens = tokens;
     self.current = 0;
     self.head = &tokens->list[0];
     return self;
 }
 
-static void parser_error(parser *self, const char *message) {
+static void parser_error(Parser *self, const char *message) {
     token *current = &self->tokens->list[self->current];
     fprintf(stderr, "Syntax Error at line %d: %s\n", current->line, message);
     exit(1);
 }
 
-static token *peek(parser *self) {
+static token *peek(Parser *self) {
     if (self->current >= self->tokens->size)
         return NULL;
     return &self->tokens->list[self->current];
 }
-static token *peek_next(parser *self) {
+static token *peek_next(Parser *self) {
     if (self->current + 1 >= self->tokens->size)
         return NULL;
     return &self->tokens->list[self->current + 1];
 }
 
-static token *advance(parser *self) {
+static token *advance(Parser *self) {
     if (self->current >= self->tokens->size)
         return NULL;
     token *res = &self->tokens->list[self->current++];
     self->head = &self->tokens->list[self->current];
     return res;
 }
-static token *expect(parser *self, TokenType type, const char *message) {
+static token *expect(Parser *self, TokenType type, const char *message) {
     token *t = peek(self);
     if (t && t->type == type) {
         return advance(self);
@@ -67,23 +67,14 @@ static token *expect(parser *self, TokenType type, const char *message) {
     return NULL;
 }
 
-static bool match(parser *self, TokenType type) {
+static bool match(Parser *self, TokenType type) {
     token *t = peek(self);
     return t && t->type == type;
 }
 
-static ast_node *ast_new_node(ast_node_type type) {
-    ast_node *node = (ast_node *)malloc(sizeof(ast_node));
-    if (!node)
-        bpp_error(0, "Failed to allocate AST node");
-    node->type = type;
-    return node;
-}
-
-ast_node *parser_parse(parser *self) {
+ast_node *parser_parse(Parser *self) {
     ast_node *program = ast_new_node(AST_PROGRAM);
     expect(self, SUGOD, "Expected 'SUGOD' at start of program");
-
 
     ast_node *stmts = dynarray_create(ast_node);
 
@@ -100,13 +91,13 @@ ast_node *parser_parse(parser *self) {
 
     expect(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
 
-    program->program.stmt_count = dynarray_length(stmts);
-    program->program.statements = stmts;
+    program->Program.stmt_count = dynarray_length(stmts);
+    program->Program.statements = stmts;
 
     return program;
 }
 
-static ast_node *parse_statement(parser *self) {
+static ast_node *parse_statement(Parser *self) {
     token *t = peek(self);
 
     printf("CURR TOKEN: ");
@@ -130,7 +121,7 @@ static ast_node *parse_statement(parser *self) {
     return NULL;
 }
 
-static ast_node *parse_var_decl(parser *self) {
+static ast_node *parse_var_decl(Parser *self) {
     advance(self);
 
     TokenType d_type = advance(self)->type;
@@ -143,20 +134,14 @@ static ast_node *parse_var_decl(parser *self) {
 
     // TODO: implement allocator functions
     int temp_size = 10;
-
-//    token *names = dynarray_create(token);
-//    ast_node **inits = dynarray_create(ast_node *);
-
-    token *names = malloc(sizeof(token) * temp_size);
+    token **names = malloc(sizeof(token *) * temp_size);
     ast_node **inits = malloc(sizeof(ast_node *) * temp_size);
     int name_count = 0;
 
     while (!match(self, NEWLINE)) {
         token *name = expect(self, IDENTIFIER, "Expected: variable name");
 
-        names[name_count] = *name;
-
-        //dynarray_push(names, *name);
+        names[name_count] = name;
 
         ast_node *init = NULL;
         if (match(self, EQUAL)) {
@@ -164,33 +149,31 @@ static ast_node *parse_var_decl(parser *self) {
             init = parse_expression(self);
         }
 
-//        dynarray_push(inits, init);
+        inits[name_count] = init;
+        name_count++;
 
-         inits[name_count] = init;
-         name_count++;
-
-         if (name_count == temp_size) {
-             names = realloc(names, sizeof(token) * (name_count + 10));
-             inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
-             temp_size += 10;
-         }
+        if (name_count == temp_size) {
+            names = realloc(names, sizeof(token *) * (name_count + 10));
+            inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
+            temp_size += 10;
+        }
 
         if (match(self, COMMA)) {
             advance(self);
         }
     }
 
-    // names = realloc(names, sizeof(token) * name_count);
-    // inits = realloc(inits, sizeof(ast_node *) * name_count);
+    names = realloc(names, sizeof(token *) * name_count);
+    inits = realloc(inits, sizeof(ast_node *) * name_count);
 
-    decl->var_decl.names = names;
-    decl->var_decl.inits = inits;
-    decl->var_decl.name_count = name_count;
-    decl->var_decl.d_type = d_type;
+    decl->Var_decl.names = names;
+    decl->Var_decl.inits = inits;
+    decl->Var_decl.name_count = name_count;
+    decl->Var_decl.d_type = d_type;
     return decl;
 }
 
-static ast_node *parse_assignment(parser *self) {
+static ast_node *parse_assignment(Parser *self) {
     token *var_name = advance(self);
     expect(self, EQUAL, "Expected '=' after variable name");
 
@@ -203,13 +186,13 @@ static ast_node *parse_assignment(parser *self) {
     }
 
     ast_node *assign = ast_new_node(AST_ASSIGNMENT);
-    assign->assignment.expr = expr;
-    assign->assignment.var = var_name;
+    assign->Assignment.expr = expr;
+    assign->Assignment.var = var_name;
 
     return assign;
 }
 
-static ast_node *parse_print(parser *self) {
+static ast_node *parse_print(Parser *self) {
     advance(self);
     expect(self, COLON, "Expected ':' after 'IPAKITA'");
 
@@ -238,12 +221,12 @@ static ast_node *parse_print(parser *self) {
         }
     }
 
-    print->print.exprs = exprs;
-    print->print.expr_count = expr_count;
+    print->Print_stmt.exprs = exprs;
+    print->Print_stmt.expr_count = expr_count;
     return print;
 }
 
-static ast_node *parse_input(parser *self) {
+static ast_node *parse_input(Parser *self) {
     advance(self);
     expect(self, COLON, "Expected ':' after 'DAWAT'");
 
@@ -270,12 +253,12 @@ static ast_node *parse_input(parser *self) {
         expect(self, COMMA, "EXPECT COMMA");
     }
 
-    input->input.vars = vars;
-    input->input.var_count = var_count;
+    input->Input.vars = vars;
+    input->Input.var_count = var_count;
     return input;
 }
 
-static ast_node *parse_block(parser *self) {
+static ast_node *parse_block(Parser *self) {
     expect(self, PUNDOK, "Expected 'PUNDOK'");
     expect(self, LEFT_BRACE, "Expected '{' after 'PUNDOK'");
 
@@ -295,13 +278,13 @@ static ast_node *parse_block(parser *self) {
 
     expect(self, RIGHT_BRACE, "Expected '}' after block");
     if (stmts) {
-        block->block.statements = *stmts;
+        block->Block.statements = *stmts;
     }
-    block->block.stmt_count = stmt_count;
+    block->Block.stmt_count = stmt_count;
     return block;
 }
 
-static ast_node *parse_else(parser *self) {
+static ast_node *parse_else(Parser *self) {
     if (match(self, KUNG_DILI)) {
         advance(self);
         expect(self, LEFT_PAREN, "Expected '(' after 'KUNG DILI'");
@@ -310,15 +293,14 @@ static ast_node *parse_else(parser *self) {
         expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
         ast_node *then_block = parse_block(self);
 
-
         ast_node *stmt = ast_new_node(AST_ELSE_IF);
-        stmt->if_stmt.condition = condition;
-        stmt->if_stmt.then_block = then_block;
+        stmt->If_stmt.condition = condition;
+        stmt->If_stmt.then_block = then_block;
 
         advance(self);
 
         if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
-            stmt->if_stmt.else_block = parse_else(self);
+            stmt->If_stmt.else_block = parse_else(self);
         }
         return stmt;
 
@@ -328,18 +310,18 @@ static ast_node *parse_else(parser *self) {
         ast_node *block = parse_block(self);
 
         ast_node *stmt = ast_new_node(AST_ELSE);
-        stmt->if_stmt.then_block = block;
+        stmt->If_stmt.then_block = block;
         return stmt;
     }
     return NULL;
 }
 
-static ast_node *parse_if(parser *self) {
-// struct {
-//     ast_node *condition;
-//     ast_node *then_block;
-//     ast_node *else_block;
-// } if_stmt;
+static ast_node *parse_if(Parser *self) {
+    // struct {
+    //     ast_node *condition;
+    //     ast_node *then_block;
+    //     ast_node *else_block;
+    // } if_stmt;
 
     advance(self);
 
@@ -353,19 +335,19 @@ static ast_node *parse_if(parser *self) {
     ast_node *then_block = parse_block(self);
 
     ast_node *if_stmt = ast_new_node(AST_IF);
-    if_stmt->if_stmt.condition = condition;
-    if_stmt->if_stmt.then_block = then_block;
+    if_stmt->If_stmt.condition = condition;
+    if_stmt->If_stmt.then_block = then_block;
 
     advance(self);
 
     if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
-        if_stmt->if_stmt.else_block = parse_else(self);
+        if_stmt->If_stmt.else_block = parse_else(self);
     }
 
     return if_stmt;
 }
 
-static ast_node *parse_for(parser *self) {
+static ast_node *parse_for(Parser *self) {
     advance(self);
     expect(self, LEFT_PAREN, "Expected '(' after ALANG SA");
 
@@ -390,18 +372,18 @@ static ast_node *parse_for(parser *self) {
     ast_node *body = parse_block(self);
 
     ast_node *for_stmt = ast_new_node(AST_FOR);
-    for_stmt->for_stmt.init = init;
-    for_stmt->for_stmt.condition = condition;
-    for_stmt->for_stmt.update = update;
-    for_stmt->for_stmt.body = body;
+    for_stmt->For_stmt.init = init;
+    for_stmt->For_stmt.condition = condition;
+    for_stmt->For_stmt.update = update;
+    for_stmt->For_stmt.body = body;
     return for_stmt;
 }
 
-static ast_node *parse_expression(parser *self) {
+static ast_node *parse_expression(Parser *self) {
     return parse_binary(self, 0);
 }
 
-static ast_node *parse_binary(parser *self, int precedence) {
+static ast_node *parse_binary(Parser *self, int precedence) {
     ast_node *left = parse_unary(self);
 
     while (peek(self)) {
@@ -414,9 +396,9 @@ static ast_node *parse_binary(parser *self, int precedence) {
         ast_node *right = parse_binary(self, op_precedence);
 
         ast_node *binary = ast_new_node(AST_BINARY);
-        binary->binary.op = op;
-        binary->binary.left = left;
-        binary->binary.right = right;
+        binary->Binary.op = op;
+        binary->Binary.left = left;
+        binary->Binary.right = right;
         left = binary;
     }
     return left;
@@ -446,19 +428,19 @@ static int get_precedence(TokenType type) {
     }
 }
 
-static ast_node *parse_unary(parser *self) {
+static ast_node *parse_unary(Parser *self) {
     if (match(self, PLUS) || match(self, MINUS) || match(self, DILI)) {
         token *op = advance(self);
         ast_node *expr = parse_unary(self);
         ast_node *unary = ast_new_node(AST_UNARY);
-        unary->unary.op = op;
-        unary->unary.expr = expr;
+        unary->Unary.op = op;
+        unary->Unary.expr = expr;
         return unary;
     }
     return parse_primary(self);
 }
 
-static ast_node *parse_primary(parser *self) {
+static ast_node *parse_primary(Parser *self) {
     token *t = peek(self);
     if (!t)
         parser_error(self, "Unexpected end of input");
@@ -466,11 +448,11 @@ static ast_node *parse_primary(parser *self) {
     if (match(self, NUMBER) || match(self, STRING) || match(self, TRUE) ||
         match(self, FALSE)) {
         ast_node *literal = ast_new_node(AST_LITERAL);
-        literal->literal.value = advance(self);
+        literal->Literal.value = advance(self);
         return literal;
     } else if (match(self, IDENTIFIER)) {
         ast_node *var = ast_new_node(AST_VARIABLE);
-        var->variable.name = advance(self);
+        var->Variable.name = advance(self);
         return var;
     } else if (match(self, LEFT_PAREN)) {
         advance(self);
@@ -482,18 +464,18 @@ static ast_node *parse_primary(parser *self) {
         expect(self, HASH, "Expected '#' after '[' in escape code");
         expect(self, RIGHT_BRACKET, "Expected ']' after '#'");
         ast_node *literal = ast_new_node(AST_LITERAL);
-        literal->literal.value = malloc(sizeof(token));
-        literal->literal.value->type = HASH;
-        literal->literal.value->lexeme = "#";
-        literal->literal.value->line = t->line;
+        literal->Literal.value = malloc(sizeof(token));
+        literal->Literal.value->type = HASH;
+        literal->Literal.value->lexeme = "#";
+        literal->Literal.value->line = t->line;
         return literal;
     } else if (match(self, DOLLAR)) { // Newline ($)
         advance(self);
         ast_node *literal = ast_new_node(AST_LITERAL);
-        literal->literal.value = malloc(sizeof(token));
-        literal->literal.value->type = DOLLAR;
-        literal->literal.value->lexeme = "$";
-        literal->literal.value->line = t->line;
+        literal->Literal.value = malloc(sizeof(token));
+        literal->Literal.value->type = DOLLAR;
+        literal->Literal.value->lexeme = "$";
+        literal->Literal.value->line = t->line;
         return literal;
     }
 

@@ -13,41 +13,41 @@ bool is_alpha(const char c) {
     return isalpha(c) || c == '_';
 }
 
-static bool is_at_end(lexer *self) {
-    return self->current >= self->source.len;
+static bool is_at_end(Lexer *self) {
+    return self->current >= strlen(self->source);
 }
 
-static char advance(lexer *self) {
-    return self->source.data[self->current++];
+static char advance(Lexer *self) {
+    return self->source[self->current++];
 }
 
-static char peek(lexer *self) {
+static char peek(Lexer *self) {
     if (is_at_end(self)) { return '\0'; }
-    return self->source.data[self->current];
+    return self->source[self->current];
 }
 
-static char peek_next(lexer *self) {
-    if (self->current + 1 >= self->source.len)
+static char peek_next(Lexer *self) {
+    if (self->current + 1 >= strlen(self->source))
         return '\0';
-    return self->source.data[self->current + 1];
+    return self->source[self->current + 1];
 }
 
-static bool match(lexer *self, char expected) {
+static bool match(Lexer *self, char expected) {
     if (is_at_end(self)) { return false; }
-    if (self->source.data[self->current] != expected) {
+    if (self->source[self->current] != expected) {
         return false;
     }
     self->current++;
     return true;
 }
 
-static const char *get_token_substring(lexer *self, int start, int end) {
+static const char *get_token_substring(Lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = malloc(text_len);
     if (text == NULL) {
         bpp_error(self->line, "Failed to allocate mem");
     }
-    strncpy(text, self->source.data + start, text_len);
+    strncpy(text, self->source + start, text_len);
 
     // remove '\n' from string
     int l = strlen(text);
@@ -58,7 +58,7 @@ static const char *get_token_substring(lexer *self, int start, int end) {
     return text;
 }
 
-static void add_token(lexer *self, TokenType type, void *literal) {
+static void add_token(Lexer *self, TokenType type, void *literal) {
 
     if (type == STRING || type == TRUE || type == FALSE)
         self->start += 1;
@@ -88,7 +88,7 @@ static void add_token(lexer *self, TokenType type, void *literal) {
     }
 }
 
-static void scan_string(lexer *self) {
+static void scan_string(Lexer *self) {
     // shit code, refactor
     while(peek(self) != '"' && !is_at_end(self)) {
         advance(self);
@@ -113,7 +113,7 @@ static void scan_string(lexer *self) {
     advance(self);
 }
 
-static void scan_char(lexer *self) {
+static void scan_char(Lexer *self) {
     if (isalnum(peek(self)) && peek_next(self) == '\'') {
         advance(self);
         advance(self);
@@ -127,7 +127,7 @@ static void scan_char(lexer *self) {
     }
 }
 
-static void scan_comment(lexer *self) {
+static void scan_comment(Lexer *self) {
     if (match(self, '-')) {
         while (peek(self) != '\n' && !is_at_end(self))
             advance(self);
@@ -137,7 +137,7 @@ static void scan_comment(lexer *self) {
 }
 
 
-static void scan_number(lexer *self) {
+static void scan_number(Lexer *self) {
 
     while (isdigit(peek(self)))
         advance(self);
@@ -157,7 +157,7 @@ static void scan_number(lexer *self) {
     add_token(self, NUMBER, val);
 }
 
-static void scan_identifier(lexer *self) {
+static void scan_identifier(Lexer *self) {
     char c = advance(self);
     while (isalnum(c) || c == '_') {
         c = advance(self);
@@ -201,7 +201,7 @@ static void scan_identifier(lexer *self) {
     add_token(self, get_token_type(text), NULL);
 }
 
-static void lexer_scan_token(lexer *self) {
+static void lexer_scan_token(Lexer *self) {
     char c = advance(self);
 
     switch(c) {
@@ -210,7 +210,7 @@ static void lexer_scan_token(lexer *self) {
         case '\r':
             break;
         case '\n':
-            add_token(self, NEWLINE, NULL);
+           add_token(self, NEWLINE, NULL);
             self->line++;
             break;
         case '\0': add_token(self, EOFILE, NULL);         break;
@@ -269,10 +269,10 @@ static void lexer_scan_token(lexer *self) {
     }
 }
 
-lexer lexer_create(struct lexer_src *source) {
+Lexer lexer_create(struct lexer_src *source) {
 
-    lexer self;
-    self.source = *source;
+    Lexer self;
+    self.source = source->data;
     self.tokens.list = malloc(sizeof(token_list) * INCREASE);
 
     self.tokens.size = 0;
@@ -285,7 +285,7 @@ lexer lexer_create(struct lexer_src *source) {
     return self;
 }
 
-static void print_tokens(lexer *self) {
+static void print_tokens(Lexer *self) {
     printf("==========================\n");
     printf("========= TOKENS =========\n");
     printf("==========================\n");
@@ -297,13 +297,15 @@ static void print_tokens(lexer *self) {
     printf("\n");
 }
 
-void lexer_gen_tokens(lexer *self) {
+void lexer_gen_tokens(Lexer *self) {
     while (!is_at_end(self)) {
-        lexer_scan_token(self);
         self->start = self->current;
+        lexer_scan_token(self);
     }
 
-    // print_tokens(self);
+    add_token(self, EOFILE, NULL);
+
+//    print_tokens(self);
 }
 
 

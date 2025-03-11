@@ -1,32 +1,9 @@
-ALANG SA
-_varname923
-UG
-O
-DILI
-NUMERO
-LETRA
-TIPIK
-TINUOD
 SUGOD
+    MUGNA NUMERO x, y, z=
+    MUGNA LETRA a_1='n'
+    MUGNA TINUOD t="OO"
+    x=y4
+    a_1='n
+    -- this is a comment
+    IPAKITA: x & t & z & $ & a_1 & [#] & "last"
 KATAPUSAN
-MUGNA
-IPAKITA
-DAWAT
-KUNG
-PUNDOK
-ALANG SA
-123.2
-3.14
-5
-
-
-"OO"
-
-"DILI"
-_
-
-"hello"
-"what is up mananap"
-* <> = == > >= < <=
-(){}[],.-+;
--- comment comment * =

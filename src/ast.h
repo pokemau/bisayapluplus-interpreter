@@ -2,6 +2,8 @@
 #define _AST_H_
 
 #include "token.h"
+#include <stdlib.h>
+#include "util.h"
 
 typedef enum ast_node_type {
     AST_PROGRAM,
@@ -28,67 +30,69 @@ struct ast_node {
         struct {
             ast_node *statements;
             int stmt_count;
-        } program;
+        } Program;
 
         struct {
             TokenType d_type;
-            token *names;
+            token **names;
             ast_node **inits;
             int name_count;
-        } var_decl;
+        } Var_decl;
 
         struct {
             token *var;
             ast_node *expr;
-        } assignment;
+        } Assignment;
 
         struct {
             ast_node **exprs;
             int expr_count;
-        } print;
+        } Print_stmt;
 
         struct {
             token *vars;
             int var_count;
-        } input;
+        } Input;
 
         struct {
             ast_node *condition;
             ast_node *then_block;
             ast_node *else_block;
-        } if_stmt;
+        } If_stmt;
 
         struct {
             ast_node *init;
             ast_node *condition;
             ast_node *update;
             ast_node *body;
-        } for_stmt;
+        } For_stmt;
 
         struct {
             ast_node *statements;
             int stmt_count;
-        } block;
+        } Block;
 
         struct {
             ast_node *left;
             token *op;
             ast_node *right;
-        } binary;
+        } Binary;
 
         struct {
             token *op;
             ast_node *expr;
-        } unary;
+        } Unary;
 
         struct {
             token *value;
-        } literal;
+        } Literal;
 
         struct {
             token *name;
-        } variable;
+        } Variable;
     };
 };
+
+ast_node *ast_new_node(ast_node_type type);
 
 #endif
