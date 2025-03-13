@@ -11,7 +11,7 @@ typedef struct lexer_src {
 typedef struct token_list {
     long size;
     long max;
-    token *list;
+    Token *list;
 } token_list;
 
 typedef struct Lexer {

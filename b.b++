@@ -1,14 +1,8 @@
 SUGOD
-    MUGNA NUMERO a,b
---    IPAKITA: x &
---    MUGNA x,y,z
---    MUGNA LETRA a_1='n'
---    MUGNA TINUOD t="OO"
---    x=y=
---    ALANG SA(x = 10)
---    a_1='n'
---    -- this is a comment
+MUGNA NUMERO x
+MUGNA NUMERO x
+
 KATAPUSAN
 
 
--- var type checker asa
+MUGNA NUMERO x

@@ -41,6 +41,11 @@ static bool match(Lexer *self, char expected) {
     return true;
 }
 
+static Token *peek_previous(Lexer *self) {
+    if (self->tokens.size == 0) return NULL;
+    return &self->tokens.list[self->tokens.size-1];
+}
+
 static const char *get_token_substring(Lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = malloc(text_len);
@@ -65,7 +70,7 @@ static void add_token(Lexer *self, TokenType type, void *literal) {
 
     const char *text = get_token_substring(self, self->start, self->current);
 
-    self->tokens.list[self->tokens.size++] = (token){
+    self->tokens.list[self->tokens.size++] = (Token){
         .line = self->line,
         .lexeme = text,
         .type = type,
@@ -210,7 +215,10 @@ static void lexer_scan_token(Lexer *self) {
         case '\r':
             break;
         case '\n':
-           add_token(self, NEWLINE, NULL);
+            if (self->tokens.list[self->tokens.size-2].type != EOFILE
+            &&  peek_previous(self)->type != NEWLINE) {
+                add_token(self, NEWLINE, NULL);
+            }
             self->line++;
             break;
         case '\0': add_token(self, EOFILE, NULL);         break;
@@ -291,7 +299,7 @@ static void print_tokens(Lexer *self) {
     printf("==========================\n");
 
     for (int i = 0 ; i < self->tokens.size; i++) {
-        token *curr = &self->tokens.list[i];
+        Token *curr = &self->tokens.list[i];
         print_token(curr);
     }
     printf("\n");
@@ -305,7 +313,7 @@ void lexer_gen_tokens(Lexer *self) {
 
     add_token(self, EOFILE, NULL);
 
-//    print_tokens(self);
+    print_tokens(self);
 }
 
 

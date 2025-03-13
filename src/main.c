@@ -15,12 +15,14 @@ void run(const char *data, size_t total) {
     lexer_gen_tokens(&s);
     p = parser_create(&s.tokens);
 
-    ast_node *ast = parser_parse(&p);
+//    ast_node *ast = parser_parse(&p);
 
-    printf("=========================\n");
-    printf("========= AST ===========\n");
-    printf("=========================\n");
-    ast_print(ast, 0);
+    Stmt *ast = parser_parse(&p);
+
+//    printf("=========================\n");
+//    printf("========= AST ===========\n");
+//    printf("=========================\n");
+//    ast_print(ast, 0);
 
     // TODO:
     // Free allocated memory in parser
@@ -33,7 +35,7 @@ void run(const char *data, size_t total) {
     // free allocated stuff
     free(s.tokens.list);
     for (int i = 0; i < s.tokens.size; i++) {
-        token *curr = &s.tokens.list[i];
+        Token *curr = &s.tokens.list[i];
         if (curr->literal != NULL) {
             free(curr->literal);
         }

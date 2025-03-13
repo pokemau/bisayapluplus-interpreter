@@ -9,7 +9,7 @@ void report(const char *text, int line, const char *file) {
     had_error = true;
 }
 
-void error(token *tok, const char *msg) {
+void error(Token *tok, const char *msg) {
     char file_buffer[256];
 
     if (tok->type == EOFILE)

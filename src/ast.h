@@ -22,6 +22,23 @@ typedef enum ast_node_type {
     AST_VARIABLE,   // Variable reference
 } ast_node_type;
 
+static char *ast_node_type_val[] = {
+    "AST_PROGRAM",
+    "AST_VAR_DECL",
+    "AST_ASSIGNMENT",
+    "AST_PRINT",
+    "AST_INPUT",
+    "AST_IF",
+    "AST_ELSE_IF",
+    "AST_ELSE",
+    "AST_FOR",
+    "AST_BLOCK",
+    "AST_BINARY",
+    "AST_UNARY",
+    "AST_LITERAL",
+    "AST_VARIABLE",
+};
+
 typedef struct ast_node ast_node;
 struct ast_node {
     ast_node_type type;
@@ -34,13 +51,13 @@ struct ast_node {
 
         struct {
             TokenType d_type;
-            token **names;
+            Token **names;
             ast_node **inits;
             int name_count;
         } Var_decl;
 
         struct {
-            token *var;
+            Token *var;
             ast_node *expr;
         } Assignment;
 
@@ -50,7 +67,7 @@ struct ast_node {
         } Print_stmt;
 
         struct {
-            token *vars;
+            Token *vars;
             int var_count;
         } Input;
 
@@ -74,21 +91,21 @@ struct ast_node {
 
         struct {
             ast_node *left;
-            token *op;
+            Token *op;
             ast_node *right;
         } Binary;
 
         struct {
-            token *op;
+            Token *op;
             ast_node *expr;
         } Unary;
 
         struct {
-            token *value;
+            Token *value;
         } Literal;
 
         struct {
-            token *name;
+            Token *name;
         } Variable;
     };
 };

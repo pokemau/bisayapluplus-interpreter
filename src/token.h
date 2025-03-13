@@ -132,10 +132,10 @@ typedef struct token {
 
     // ang value nga iya gi hold
     void *literal;
-} token;
+} Token;
 
 const char *token_print_type(TokenType t);
 TokenType get_token_type(const char *s);
-void print_token(token *t);
+void print_token(Token *t);
 
 #endif

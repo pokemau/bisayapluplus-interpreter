@@ -6,16 +6,20 @@ project(bisaya++)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(${PROJECT_NAME}
-    src/main.c
-    src/lexer.c
-    src/util.c
-    src/token.c
-    src/parser.c
-    src/ast_printer.c
-    src/value.c
-    src/environment.c
     src/ast.c
+    src/expr.c
 
+    src/token.c
+    src/lexer.c
+    src/parser.c
+
+    src/main.c
+
+    src/util.c
+#    src/value.c
+#    src/environment.c
+
+#    src/ast_printer.c
     src/util/dyn_arr.c
     src/util/error_handler.c
 )

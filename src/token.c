@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
-void print_token(token *t) {
-    printf("[%d] %-20s %s\n", t->line, token_val[t->type], t->lexeme);
+void print_token(Token *t) {
+    printf("[%d] %-20s %s\n", t->line, token_val[t->type], t->type == EOFILE ?"":t->lexeme);
 
     const char *text;
 

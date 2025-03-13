@@ -3,18 +3,20 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "stmt.h"
 
 typedef struct Parser {
     token_list *tokens;
     int current;
-    token *head;
+    Token *head;
 } Parser;
 
 Parser parser_create(token_list *tokens);
 
 
 void ast_print(ast_node *node, int depth);
-ast_node *parser_parse(Parser *self);
+
+Stmt *parser_parse(Parser *self);
 
 // void parse(Parser *self);
 
