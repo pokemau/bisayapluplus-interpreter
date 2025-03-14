@@ -201,6 +201,12 @@ static void scan_identifier(lexer *self) {
     add_token(self, get_token_type(text), NULL);
 }
 
+static token *previous(lexer *self) {
+    if (self->tokens.size == 0)
+        return NULL;
+    return &self->tokens.list[self->tokens.size-1];
+}
+
 static void lexer_scan_token(lexer *self) {
     char c = advance(self);
 
@@ -210,7 +216,8 @@ static void lexer_scan_token(lexer *self) {
         case '\r':
             break;
         case '\n':
-            add_token(self, NEWLINE, NULL);
+            if (previous(self)->type != NEWLINE)
+                add_token(self, NEWLINE, NULL);
             self->line++;
             break;
         case '\0': add_token(self, EOFILE, NULL);         break;
@@ -303,7 +310,7 @@ void lexer_gen_tokens(lexer *self) {
         self->start = self->current;
     }
 
-    // print_tokens(self);
+    print_tokens(self);
 }
 
 

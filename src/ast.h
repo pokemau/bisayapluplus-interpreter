@@ -91,4 +91,7 @@ struct ast_node {
     };
 };
 
+ast_node *ast_new_node(ast_node_type type);
+void ast_free_node(ast_node *node);
+
 #endif

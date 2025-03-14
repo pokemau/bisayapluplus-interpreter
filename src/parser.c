@@ -1,8 +1,6 @@
 #include "parser.h"
 #include "ast.h"
 #include "token.h"
-#include "util.h"
-
 #include "util/dyn_arr.h"
 
 #include <stdbool.h>
@@ -23,6 +21,12 @@ static ast_node *parse_primary(parser *self);
 static ast_node *parse_assignment(parser *self);
 static int get_precedence(TokenType type);
 
+static bool is_at_end(parser *self);
+static token *peek(parser *self);
+
+static void synchronize(parser *self);
+static void parser_curr(parser *self);
+
 static ast_node *parse_statement(parser *self);
 static ast_node *parse_expression(parser *self);
 
@@ -37,8 +41,10 @@ parser parser_create(token_list *tokens) {
 static void parser_error(parser *self, const char *message) {
     token *current = &self->tokens->list[self->current];
     fprintf(stderr, "Syntax Error at line %d: %s\n", current->line, message);
-    exit(1);
+    //    exit(1);
 }
+
+static bool is_at_end(parser *self) { return peek(self)->type == EOFILE; }
 
 static token *peek(parser *self) {
     if (self->current >= self->tokens->size)
@@ -51,6 +57,13 @@ static token *peek_next(parser *self) {
     return &self->tokens->list[self->current + 1];
 }
 
+static token *previous(parser *self) {
+    if (self->current == 0)
+        return NULL;
+    token *res = &self->tokens->list[self->current--];
+    self->head = &self->tokens->list[self->current];
+    return res;
+}
 static token *advance(parser *self) {
     if (self->current >= self->tokens->size)
         return NULL;
@@ -72,117 +85,121 @@ static bool match(parser *self, TokenType type) {
     return t && t->type == type;
 }
 
-static ast_node *ast_new_node(ast_node_type type) {
-    ast_node *node = (ast_node *)malloc(sizeof(ast_node));
-    if (!node)
-        bpp_error(0, "Failed to allocate AST node");
-    node->type = type;
-    return node;
-}
-
-ast_node *parser_parse(parser *self) {
-    ast_node *program = ast_new_node(AST_PROGRAM);
-    expect(self, SUGOD, "Expected 'SUGOD' at start of program");
-
-
-    ast_node *stmts = dynarray_create(ast_node);
-
-    while (!match(self, KATAPUSAN)) {
-
-        if (match(self, NEWLINE)) {
-            advance(self);
-            continue;
-        }
-
-        ast_node *stmt = parse_statement(self);
-        dynarray_push(stmts, *stmt);
-    }
-
-    expect(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
-
-    program->program.stmt_count = dynarray_length(stmts);
-    program->program.statements = stmts;
-
-    return program;
-}
-
 static ast_node *parse_statement(parser *self) {
     token *t = peek(self);
-
-    printf("CURR TOKEN: ");
+    printf("CURR TOKEN:::::");
     print_token(t);
 
+    ast_node *res = NULL;
+
     if (match(self, MUGNA)) {
-        return parse_var_decl(self);
+        res = parse_var_decl(self);
     } else if (match(self, IPAKITA)) {
-        return parse_print(self);
+        res = parse_print(self);
     } else if (match(self, IDENTIFIER)) {
-        return parse_assignment(self);
+        res = parse_assignment(self);
     } else if (match(self, ALANG_SA)) {
-        return parse_for(self);
+        res = parse_for(self);
     } else if (match(self, DAWAT)) {
-        return parse_input(self);
+        res = parse_input(self);
     } else if (match(self, KUNG)) {
-        return parse_if(self);
+        res = parse_if(self);
+    } else if (match(self, KATAPUSAN)) {
+        while (!is_at_end(self))
+            advance(self);
+        return NULL;
+    } else {
+        printf("ELSE::::::::");
+        parser_curr(self);
+        parser_error(self, "Unexpected token in statement");
     }
 
-    parser_error(self, "Unexpected token in statement");
-    return NULL;
+    if (!res) {
+        printf("SYNCHRONIZE\n");
+        synchronize(self);
+        printf("AFTER SYNC:::::::");
+        parser_curr(self);
+        return NULL;
+    }
+    return res;
 }
 
 static ast_node *parse_var_decl(parser *self) {
+    printf("=============PARSE VAR DECL=============\n");
     advance(self);
 
     TokenType d_type = advance(self)->type;
     if (d_type != NUMERO && d_type != LETRA && d_type != TINUOD &&
         d_type != TIPIK) {
         parser_error(self, "Expected data type after 'MUGNA'");
+        return NULL;
     }
-
-    ast_node *decl = ast_new_node(AST_VAR_DECL);
 
     // TODO: implement allocator functions
     int temp_size = 10;
-
-//    token *names = dynarray_create(token);
-//    ast_node **inits = dynarray_create(ast_node *);
-
     token *names = malloc(sizeof(token) * temp_size);
     ast_node **inits = malloc(sizeof(ast_node *) * temp_size);
+    if (!names || !inits) {
+        parser_error(self, "Failed to allocate [parse_var_decl]");
+        return NULL;
+    }
     int name_count = 0;
 
     while (!match(self, NEWLINE)) {
-        token *name = expect(self, IDENTIFIER, "Expected: variable name");
+        token *name = advance(self);
+        if (!name || name->type != IDENTIFIER) {
+            parser_error(self, "Expected: variable name");
+            free(names);
+            free(inits);
+            return NULL;
+        }
 
         names[name_count] = *name;
-
-        //dynarray_push(names, *name);
 
         ast_node *init = NULL;
         if (match(self, EQUAL)) {
             advance(self);
             init = parse_expression(self);
+            if (!init) {
+                free(names);
+                free(inits);
+                return NULL;
+            }
         }
 
-//        dynarray_push(inits, init);
+        inits[name_count] = init;
+        name_count++;
 
-         inits[name_count] = init;
-         name_count++;
-
-         if (name_count == temp_size) {
-             names = realloc(names, sizeof(token) * (name_count + 10));
-             inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
-             temp_size += 10;
-         }
+        if (name_count == temp_size) {
+            names = realloc(names, sizeof(token) * (name_count + 10));
+            inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
+            temp_size += 10;
+        }
 
         if (match(self, COMMA)) {
+            if (peek_next(self)->type != IDENTIFIER) {
+                parser_error(self, "Expected: Variable name after ','");
+                free(names);
+                free(inits);
+                return NULL;
+            }
             advance(self);
         }
     }
 
-    // names = realloc(names, sizeof(token) * name_count);
-    // inits = realloc(inits, sizeof(ast_node *) * name_count);
+    if (name_count == 0) {
+        parser_error(self, "Expected: Variable name");
+        free(names);
+        // TODO: free each ast_node
+        free(inits);
+        return NULL;
+    }
 
+    names = realloc(names, sizeof(token) * name_count);
+    inits = realloc(inits, sizeof(ast_node *) * name_count);
+
+    expect(self, NEWLINE, "Expected: statement in new line");
+    ast_node *decl = ast_new_node(AST_VAR_DECL);
     decl->var_decl.names = names;
     decl->var_decl.inits = inits;
     decl->var_decl.name_count = name_count;
@@ -190,16 +207,59 @@ static ast_node *parse_var_decl(parser *self) {
     return decl;
 }
 
-static ast_node *parse_assignment(parser *self) {
-    token *var_name = advance(self);
-    expect(self, EQUAL, "Expected '=' after variable name");
+static void synchronize(parser *self) {
+    advance(self);
+    while (!is_at_end(self)) {
+        token *curr = peek(self);
+        switch (curr->type) {
+        case RIGHT_BRACE:
+            // case KATAPUSAN:
 
+        case MUGNA:
+        case IPAKITA:
+        case DAWAT:
+        case KUNG:
+        case ALANG_SA:
+            return;
+        default:
+            advance(self);
+        }
+    }
+}
+
+static void parser_curr(parser *self) {
+    printf("CURR:::::::");
+    print_token(peek(self));
+}
+
+static ast_node *parse_assignment(parser *self) {
+    printf("=============PARSE ASSIGNMENT=============\n");
+    token *var_name = advance(self);
+    if (!expect(self, EQUAL, "Expected '=' after variable name"))
+        return NULL;
     ast_node *expr = NULL;
 
     if (match(self, IDENTIFIER) && peek_next(self)->type == EQUAL) {
         expr = parse_assignment(self);
+        if (!expr) {
+            return NULL;
+        }
     } else {
         expr = parse_expression(self);
+        if (!expr) {
+            return NULL;
+        }
+
+        char buf[128];
+        peek_next(self)->type != NEWLINE
+            ? snprintf(buf, 128, "'%s' is not assignable",
+                       peek_next(self)->lexeme)
+            : snprintf(buf, 128, "Expected: Expression after '%s'",
+                       peek(self)->lexeme);
+
+        if (!expect(self, NEWLINE, buf)) {
+            return NULL;
+        }
     }
 
     ast_node *assign = ast_new_node(AST_ASSIGNMENT);
@@ -210,34 +270,49 @@ static ast_node *parse_assignment(parser *self) {
 }
 
 static ast_node *parse_print(parser *self) {
+    printf("=============PARSE IPAKITA=============\n");
     advance(self);
-    expect(self, COLON, "Expected ':' after 'IPAKITA'");
+    if (!expect(self, COLON, "Expected ':' after 'IPAKITA'"))
+        return NULL;
 
-    ast_node *print = ast_new_node(AST_PRINT);
     ast_node **exprs = NULL;
     int temp_size = 10;
     exprs = malloc(sizeof(ast_node *) * temp_size);
-
     int expr_count = 0;
 
     while (!match(self, NEWLINE)) {
         ast_node *expr = parse_expression(self);
+        if (!expr) {
+            free(exprs);
+            return NULL;
+        }
+
         exprs[expr_count++] = expr;
 
         if (expr_count == temp_size) {
             exprs = realloc(exprs, sizeof(ast_node *) * (expr_count * 10));
             if (!exprs) {
-                fprintf(stderr, "ERROR:>Failed to resize (parse_print)\n");
+                fprintf(stderr,
+                        "ERROR: Failed to resize exprs [parse_print]\n");
+                free(exprs);
                 exit(1);
             }
             temp_size += 10;
         }
 
+        // TODO: check if blank ang next sa &
+        // eg. IPAKITA: a & b &
         if (match(self, AMPERSAND)) {
             advance(self);
         }
     }
 
+    if (!expect(self, NEWLINE, "Expected: Statement in new line")) {
+        free(exprs);
+        return NULL;
+    }
+
+    ast_node *print = ast_new_node(AST_PRINT);
     print->print.exprs = exprs;
     print->print.expr_count = expr_count;
     return print;
@@ -310,7 +385,6 @@ static ast_node *parse_else(parser *self) {
         expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
         ast_node *then_block = parse_block(self);
 
-
         ast_node *stmt = ast_new_node(AST_ELSE_IF);
         stmt->if_stmt.condition = condition;
         stmt->if_stmt.then_block = then_block;
@@ -335,11 +409,11 @@ static ast_node *parse_else(parser *self) {
 }
 
 static ast_node *parse_if(parser *self) {
-// struct {
-//     ast_node *condition;
-//     ast_node *then_block;
-//     ast_node *else_block;
-// } if_stmt;
+    // struct {
+    //     ast_node *condition;
+    //     ast_node *then_block;
+    //     ast_node *else_block;
+    // } if_stmt;
 
     advance(self);
 
@@ -499,4 +573,35 @@ static ast_node *parse_primary(parser *self) {
 
     parser_error(self, "Expected expression");
     return NULL;
+}
+
+ast_node *parser_parse(parser *self) {
+    ast_node *program = ast_new_node(AST_PROGRAM);
+    expect(self, SUGOD, "Expected 'SUGOD' at start of program");
+    expect(self, NEWLINE, "Expected statement in new line");
+
+    ast_node *stmts = dynarray_create(ast_node);
+
+    while (!is_at_end(self)) {
+
+        ast_node *stmt = parse_statement(self);
+        if (stmt)
+            dynarray_push(stmts, *stmt);
+    }
+
+    // TODO:
+    // parse assignment
+    // parse ipakita
+    // parse alang sa
+    // parse dawat
+    // parse kung
+
+    previous(self);
+    previous(self);
+    expect(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
+
+    program->program.stmt_count = dynarray_length(stmts);
+    program->program.statements = stmts;
+
+    return program;
 }
