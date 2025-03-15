@@ -11,9 +11,9 @@
 #include <string.h>
 
 static ast_node *parse_statement(parser *self);
-static ast_node *parse_for_stmt(parser *self);
 static ast_node *parse_if_stmt(parser *self);
 static ast_node *parse_else_stmt(parser *self);
+static ast_node *parse_for_stmt(parser *self);
 static ast_node *parse_print_stmt(parser *self);
 static ast_node *parse_input_stmt(parser *self);
 
@@ -122,7 +122,7 @@ static ast_node *parse_statement(parser *self) {
         printf("ELSE::::::::");
         parser_curr(self);
         char buf[128];
-        snprintf(buf, 128, "Unexpected token [%s] in statement",
+        snprintf(buf, 128, "Unexpected token '%s' in statement",
                  peek(self)->lexeme);
         parser_error(self, buf);
     }
@@ -266,18 +266,24 @@ static ast_node *parse_assignment(parser *self) {
         if (!expr) {
             return NULL;
         }
+//        printf("ASSSS:::::::::::::::::::::::::");
+//        parser_curr(self);
+//        if (peek_next(self)->type == NEWLINE)
+//            advance(self);
 
-        char buf[128];
-        peek_next(self)->type != NEWLINE
-            ? snprintf(buf, 128, "'%s' is not assignable",
-                       peek_next(self)->lexeme)
-            : snprintf(buf, 128, "Expected: Expression after '%s'",
-                       peek(self)->lexeme);
-
-        if (!expect(self, NEWLINE, buf)) {
-            return NULL;
-        }
+//        char buf[128];
+//        peek_next(self)->type != NEWLINE
+//            ? snprintf(buf, 128, "'%s' is not assignable",
+//                       peek_next(self)->lexeme)
+//            : snprintf(buf, 128, "Expected: Expression after '%s'",
+//                       peek(self)->lexeme);
+//
+//        if (!expect(self, NEWLINE, buf)) {
+//            return NULL;
+//        }
     }
+
+    parser_curr(self);
 
     ast_node *assign = ast_new_node(AST_ASSIGNMENT);
     assign->assignment.expr = expr;
@@ -441,11 +447,6 @@ static ast_node *parse_block(parser *self) {
 
 static ast_node *parse_if_stmt(parser *self) {
     printf("=============PARSE IF STMT=============\n");
-    // struct {
-    //     ast_node *condition;
-    //     ast_node *then_block;
-    //     ast_node *else_block;
-    // } if_stmt;
 
     advance(self);
 
@@ -472,8 +473,6 @@ static ast_node *parse_if_stmt(parser *self) {
     if_stmt->if_stmt.condition = condition;
     if_stmt->if_stmt.then_block = then_block;
 
-    //    printf("DFJKLSJFLKSDJLKF:::::::::::");
-    //    parser_curr(self);
     //    if (!expect(self, NEWLINE, "Expected: Statement in new line[here]")) {
     //        // TODO: implement free node for this ast_node type
     //        ast_free_node(if_stmt);
@@ -543,25 +542,54 @@ static ast_node *parse_else_stmt(parser *self) {
 
 static ast_node *parse_for_stmt(parser *self) {
     advance(self);
-    expect(self, LEFT_PAREN, "Expected '(' after ALANG SA");
+
+    if (!expect(self, LEFT_PAREN, "Expected '(' after ALANG SA"))
+        return NULL;
 
     ast_node *init = NULL;
-
-    if (match(self, MUGNA)) {
-        init = parse_var_decl(self);
-    } else if (match(self, IDENTIFIER)) {
+    if (match(self, IDENTIFIER)) {
         init = parse_assignment(self);
+        if (!init) {
+            return NULL;
+        }
+    }
+    else {
+        parser_error(self, "Expected: assignment");
+        return NULL;
     }
 
-    expect(self, COMMA, "Expected ',' after initialization");
-    ast_node *condition = parse_expression(self);
+    if (!expect(self, COMMA, "Expected ',' after initialization"))
+        return NULL;
 
-    expect(self, COMMA, "Expected ',' after condition");
+    if (peek_next(self)->type != EQUAL_EQUAL &&
+        peek_next(self)->type != NOT_EQUAL &&
+        peek_next(self)->type != GREATER_EQUAL &&
+        peek_next(self)->type != LESS_EQUAL &&
+        peek_next(self)->type != LESS &&
+        peek_next(self)->type != GREATER
+    ) {
+        parser_error(self, "Invalid condition");
+        return NULL;
+    }
+
+    ast_node *condition = parse_expression(self);
+    if (!condition) {
+        return NULL;
+    }
+
+    if (!expect(self, COMMA, "Expected ',' after condition"))
+        return NULL;
 
     ast_node *update = parse_assignment(self);
+    if (!update) {
+        return NULL;
+    }
 
-    expect(self, RIGHT_PAREN, "Expected ')' after update");
-    expect(self, NEWLINE, "Expected 'PUNDOK' in new line");
+    if (!expect(self, RIGHT_PAREN, "Expected ')' after update"))
+        return NULL;
+
+    if (!expect(self, NEWLINE, "Expected 'PUNDOK' in new line"))
+        return NULL;
 
     ast_node *body = parse_block(self);
 
@@ -711,6 +739,9 @@ ast_node *parser_parse(parser *self) {
     ast_node *stmts = dynarray_create(ast_node);
 
     while (!is_at_end(self)) {
+
+        if (match(self, NEWLINE))
+            advance(self);
 
         ast_node *stmt = parse_statement(self);
         if (stmt)
