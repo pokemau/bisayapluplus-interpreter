@@ -12,8 +12,6 @@ ast_node *ast_new_node(ast_node_type type) {
     return node;
 }
 
-// TODO:
-// free() allocated mem for other ast_node types
 void ast_free_node(ast_node *node) {
     if (!node) {
         fprintf(stderr, "Node is NULL [ast_free_node]");
@@ -49,13 +47,62 @@ void ast_free_node(ast_node *node) {
         break;
     case AST_IF:
     case AST_ELSE_IF:
+        if (node->if_stmt.condition) {
+            ast_free_node(node->if_stmt.condition);
+        }
+        if (node->if_stmt.then_block) {
+            ast_free_node(node->if_stmt.then_block);
+        }
+        if (node->if_stmt.else_block) {
+            ast_free_node(node->if_stmt.else_block);
+        }
+        break;
     case AST_ELSE:
+        if (node->if_stmt.then_block) {
+            ast_free_node(node->if_stmt.then_block);
+        }
+        break;
     case AST_FOR:
+        if (node->for_stmt.init) {
+            ast_free_node(node->for_stmt.init);
+        }
+        if (node->for_stmt.condition) {
+            ast_free_node(node->for_stmt.condition);
+        }
+        if (node->for_stmt.update) {
+            ast_free_node(node->for_stmt.update);
+        }
+        if (node->for_stmt.body) {
+            ast_free_node(node->for_stmt.body);
+        }
+        break;
     case AST_BLOCK:
+        for (int i = 0; i < node->block.stmt_count; i++) {
+            ast_free_node(&node->block.statements[i]);
+        }
+        free(node->block.statements);
+        break;
     case AST_BINARY:
+        if (node->binary.left) {
+            ast_free_node(node->binary.left);
+        }
+        if (node->binary.right) {
+            ast_free_node(node->binary.right);
+        }
+        break;
     case AST_UNARY:
+        if (node->unary.expr) {
+            ast_free_node(node->unary.expr);
+        };
+        break;
     case AST_LITERAL:
+        break;
     case AST_VARIABLE:
         break;
+    default:
+        fprintf(stderr, "Unknown AST node type %d [ast_free_node]\n",
+                node->type);
+        break;
     }
+    free(node);
 }
