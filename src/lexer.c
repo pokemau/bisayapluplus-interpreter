@@ -9,6 +9,10 @@
 #include <ctype.h>
 
 
+void lexer_error(int line, const char *msg) {
+    fprintf(stderr, "Line [%d]: %s\n", line, msg);
+    exit(1);
+}
 bool is_alpha(const char c) {
     return isalpha(c) || c == '_';
 }
@@ -45,7 +49,7 @@ static const char *get_token_substring(lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = malloc(text_len);
     if (text == NULL) {
-        bpp_error(self->line, "Failed to allocate mem");
+        lexer_error(self->line, "Failed to allocate mem");
     }
     strncpy(text, self->source.data + start, text_len);
 
@@ -60,8 +64,8 @@ static const char *get_token_substring(lexer *self, int start, int end) {
 
 static void add_token(lexer *self, TokenType type, void *literal) {
 
-    if (type == STRING || type == TRUE || type == FALSE)
-        self->start += 1;
+    if (type == STRING || type == TRUE || type == FALSE || type == CHAR)
+        self->start++;
 
     const char *text = get_token_substring(self, self->start, self->current);
 
@@ -95,7 +99,7 @@ static void scan_string(lexer *self) {
     }
 
     if (is_at_end(self)) {
-        bpp_error(self->line, "Unterminated String");
+        lexer_error(self->line, "Unterminated String");
     }
 
     const char *text = get_token_substring(self,
@@ -114,17 +118,18 @@ static void scan_string(lexer *self) {
 }
 
 static void scan_char(lexer *self) {
-    if (isalnum(peek(self)) && peek_next(self) == '\'') {
+    if (isalnum(peek(self)) && (peek_next(self) == '\'')) {
         advance(self);
         advance(self);
-
         const char *text = get_token_substring(self,
-                                               self->start + 1,
-                                               self->current - 1);
-        self->start++;
+                                               self->start+1,
+                                               self->current-1);
         self->current--;
-        add_token(self, IDENTIFIER, (void*) text);
+        add_token(self, CHAR, (void*)text);
+        advance(self);
+        return;
     }
+    lexer_error(self->line, "Unterminated or Invalid Char!");
 }
 
 static void scan_comment(lexer *self) {
@@ -151,7 +156,7 @@ static void scan_number(lexer *self) {
     const char *text = get_token_substring(self, self->start, self->current);
     double *val = malloc(sizeof(double));
     if (val == NULL) {
-        bpp_error(self->line, "Failed to allocate memory to double");
+        lexer_error(self->line, "Failed to allocate memory to double");
     }
     *val = atof(text);
     add_token(self, NUMBER, val);
@@ -216,7 +221,7 @@ static void lexer_scan_token(lexer *self) {
         case '\r':
             break;
         case '\n':
-            if (previous(self)->type != NEWLINE)
+            if (previous(self) && previous(self)->type != NEWLINE)
                 add_token(self, NEWLINE, NULL);
             self->line++;
             break;
@@ -233,7 +238,7 @@ static void lexer_scan_token(lexer *self) {
         case '&': add_token(self, AMPERSAND, NULL);       break;
         case '$': add_token(self, DOLLAR, NULL);          break;
         case '#': add_token(self, HASH, NULL);            break;
-        case '+': 
+        case '+':
 //            if (match(self, '+')) {
 //                add_token(self, INCREMENT, NULL);
 //            } else {
@@ -270,7 +275,7 @@ static void lexer_scan_token(lexer *self) {
                 scan_identifier(self);
             } else {
                 printf("{ %c }\n", c);
-                bpp_error(self->line, "Unexpected character!");
+                lexer_error(self->line, "Unexpected character!");
             }
             break;
     }
@@ -312,5 +317,3 @@ void lexer_gen_tokens(lexer *self) {
 
     print_tokens(self);
 }
-
-
