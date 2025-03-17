@@ -42,7 +42,7 @@ typedef enum TokenType {
     // Unary operator (+, -) // IDK
 
     // Literals
-    IDENTIFIER, STRING, NUMBER,
+    IDENTIFIER, STRING, CHAR, NUMBER,
 
     // Data Types (NUMBER, CHAR, FLOAT, BOOLEAN)
     NUMERO, LETRA, TIPIK, TINUOD,
@@ -65,7 +65,6 @@ typedef enum TokenType {
 //    INCREMENT,
 //    DECREMENT,
 } TokenType;
-
 
 static const char *token_val[] = {
     "LEFT_BRACE",
@@ -101,6 +100,7 @@ static const char *token_val[] = {
     "FALSE",
     "IDENTIFIER",
     "STRING",
+    "CHAR",
     "NUMBER",
     "NUMERO",
     "LETRA",

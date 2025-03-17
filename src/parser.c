@@ -3,7 +3,6 @@
 #include "token.h"
 #include "util/dyn_arr.h"
 
-#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -667,7 +666,7 @@ static ast_node *parse_primary(parser *self) {
     if (!t)
         parser_error(self, "Unexpected end of input");
 
-    if (match(self, NUMBER) || match(self, STRING) || match(self, TRUE) ||
+    if (match(self, CHAR) || match(self, NUMBER) || match(self, STRING) || match(self, TRUE) ||
         match(self, FALSE)) {
         ast_node *literal = ast_new_node(AST_LITERAL);
         literal->literal.value = advance(self);
@@ -750,9 +749,8 @@ ast_node *parser_parse(parser *self) {
 
     // TODO:
     // parse ipakita
-    // parse alang sa
     // parse dawat
-    // parse kung
+    // parse var_decl types LETRA, TINUOD
 
     previous(self);
     previous(self);
