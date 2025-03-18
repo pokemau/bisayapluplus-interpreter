@@ -13,7 +13,9 @@ add_executable(${PROJECT_NAME}
     src/parser.c
     src/ast_printer.c
     src/value.c
+    src/ast.c
     src/environment.c
+    src/interpreter.c
 
     src/util/dyn_arr.c
 )

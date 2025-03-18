@@ -1,9 +1,38 @@
 SUGOD
-    MUGNA NUMERO x, y, z=5
-    MUGNA LETRA a_1='n'
-    MUGNA TINUOD t="OO"
-    x=y=4
-    a_1='n'
-    -- this is a comment
-    IPAKITA: x & t & z & $ & a_1 & [#] & "last"
+
+--    KUNG (10 > 5)
+--    PUNDOK {
+--        IPAKITA: "10 greater than 5"
+--    }
+
+--    MUGNA NUMERO x,y,z=5
+--    MUGNA LETRA a_1='n'
+--    MUGNA TINUOD t="OO"
+--
+--    x=y=4
+--    a_1='c'
+--
+--    IPAKITA: x & t & z & $ & a_1 & [#] & "last"
+
+    MUGNA NUMERO xyz,abc=100
+    xyz = ((abc*5)/10+10)*-1
+    IPAKITA: xyz
+
+
 KATAPUSAN
+
+-- TODO
+
+--[LEXER]
+-- refactor maybe ang add_token
+-- refactor maybe ang get_token_substring
+
+
+--[PARSER]
+-- parse_print
+    -- implement parsing inside '[]'
+
+--[INTERPRETER]
+-- var_decl
+    -- cannot re declare variables
+-- implement printing of binary expressions eg. 6 * 10

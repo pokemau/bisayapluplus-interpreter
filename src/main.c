@@ -5,10 +5,12 @@
 #include "token.h"
 #include "util.h"
 #include "parser.h"
-#include "util/dyn_arr.h"
+#include "interpreter.h"
+
 
 lexer s;
 parser p;
+interpreter i;
 
 void run(const char *data, size_t total) {
     s = lexer_create(&(lexer_src){.len = total, .data = data});
@@ -25,10 +27,13 @@ void run(const char *data, size_t total) {
     // TODO:
     // Free allocated memory in parser
 
-    //    i = interpreter_create(&p);
-    //    interpreter_run(&i,ast);
-    //
-    //    interpreter_free(&i);
+    i = interp_create();
+    interp_execute(&i, ast);
+
+    // free ast_nodes after program
+//    for (int i = 0; i < ast->program.stmt_count; i++) {
+//            ast_free_node(&ast[i]);
+//    }
 
     // free allocated stuff
     free(s.tokens.list);

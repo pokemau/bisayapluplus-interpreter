@@ -20,6 +20,13 @@ typedef enum ast_node_type {
     AST_VARIABLE,   // Variable reference
 } ast_node_type;
 
+typedef enum var_d_type {
+    D_TYPE_NUMERO = 34,
+    D_TYPE_LETRA,
+    D_TYPE_TIPIK,
+    D_TYPE_TINUOD,
+} var_d_type;
+
 typedef struct ast_node ast_node;
 struct ast_node {
     ast_node_type type;

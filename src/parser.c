@@ -685,10 +685,13 @@ static ast_node *parse_primary(parser *self) {
 
         while (!match(self, NEWLINE)) {
             if (match(self, RIGHT_BRACKET)) {
-                printf("ENDDDDDDDDDDDDD\n");
+                ast_node *res = ast_new_node(AST_LITERAL);
+                res->literal.value = peek_prev(self);
                 advance(self);
-                return NULL;
-                // CREATE HERE
+
+                printf("AFTER:::::::::");
+                parser_curr(self);
+                return res;
             }
             // parser_curr(self);
             advance(self);
@@ -716,7 +719,8 @@ static ast_node *parse_primary(parser *self) {
         //        literal->literal.value->lexeme = "#";
         //        literal->literal.value->line = t->line;
         //        return literal;
-    } else if (match(self, DOLLAR)) { // Newline ($)
+    } else if (match(self, DOLLAR)) {
+        printf("DOLLAR\n");
         advance(self);
         ast_node *literal = ast_new_node(AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));

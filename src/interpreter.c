@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#define equality(a,b) ((a)>(b) ? 1 : (a) < (b) ? -1 : 0)
+
 bool interp_has_error = false;
 
 static value evaluate(interpreter *self, ast_node *node);
@@ -89,7 +92,16 @@ static void execute_statement(interpreter *self, ast_node *node) {
             break;
         case AST_PRINT:
             for (int i = 0; i < node->print.expr_count; i++) {
-                value val = evaluate(self, node->print.exprs[i]);
+                ast_node *curr = node->print.exprs[i];
+                if (curr->type == AST_LITERAL) {
+                    if (curr->literal.value->type == DOLLAR) {
+                        printf("\n");
+                    } else {
+                        printf("%s", curr->literal.value->lexeme);
+                    }
+                    continue;
+                }
+                value val = evaluate(self, curr);
                 if (val.type == VAL_NUMERO) {
                     printf("%d", val.as.numero);
                 }
@@ -103,6 +115,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
                     printf("NULL");
                 }
             }
+            break;
         case AST_INPUT:
         case AST_IF:
         case AST_ELSE_IF:
