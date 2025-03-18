@@ -8,7 +8,13 @@ typedef struct interpreter {
     environment *env;
 } interpreter;
 
-interpreter *interpreter_create();
-void interpreter_execute(interpreter *self, ast_node *node);
+
+// if ma true kay exit (?)
+extern bool interp_has_error;
+
+interpreter interp_create();
+
+void interp_free(interpreter *self);
+void interp_execute(interpreter *self, ast_node *node);
 
 #endif

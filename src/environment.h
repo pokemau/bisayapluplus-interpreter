@@ -20,6 +20,7 @@ struct environment {
 
 environment *env_create(environment *parent);
 
+void env_error(int line, const char *msg);
 void env_free(environment *self);
 void env_define(environment *self, const char *name, value val);
 bool env_get(environment *self, const char *name, value *out);
