@@ -15,7 +15,7 @@ typedef enum {
 typedef struct value {
     value_type type;
     union {
-        int numero;
+        long numero;
         double tipik;
         bool tinuod;
         char letra;

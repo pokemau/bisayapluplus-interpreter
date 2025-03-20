@@ -606,15 +606,17 @@ static ast_node *parse_expression(parser *self) {
 
 static ast_node *parse_binary(parser *self, int precedence) {
     ast_node *left = parse_unary(self);
+    if (!left)
+        return NULL;
 
     while (peek(self)) {
         token *op = peek(self);
         int op_precedence = get_precedence(op->type);
-        if (op_precedence <= precedence)
+        if (op_precedence < precedence)
             break;
 
         advance(self);
-        ast_node *right = parse_binary(self, op_precedence);
+        ast_node *right = parse_binary(self, op_precedence + 1);
 
         ast_node *binary = ast_new_node(AST_BINARY);
         binary->binary.op = op;
