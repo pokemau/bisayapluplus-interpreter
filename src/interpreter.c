@@ -127,11 +127,52 @@ static void execute_statement(interpreter *self, ast_node *node) {
         }
         break;
     case AST_INPUT:
+        break;
+
     case AST_IF:
     case AST_ELSE_IF:
+        val = evaluate(self, node->if_stmt.condition);
+        if (val.type != VAL_TINUOD)
+            bpp_error(node->if_stmt.condition->binary.op->line,
+                      "Condition must be boolean");
+        if (val.as.tinuod) {
+            if (node->if_stmt.then_block)
+                execute_statement(self, node->if_stmt.then_block);
+        } else if (node->if_stmt.else_block) {
+            execute_statement(self, node->if_stmt.else_block);
+        }
+        break;
     case AST_ELSE:
-    case AST_FOR:
+        if (node->if_stmt.then_block)
+            execute_statement(self, node->if_stmt.then_block);
+        break;
     case AST_BLOCK:
+        for (int i = 0; i < node->block.stmt_count; i++) {
+            execute_statement(self, &node->block.statements[i]);
+        }
+        break;
+    case AST_FOR:
+        if (node->for_stmt.init) {
+            execute_statement(self, node->for_stmt.init);
+        }
+
+        while (true) {
+            val = evaluate(self, node->for_stmt.condition);
+
+            if (!val.as.tinuod) {
+                break;
+            }
+
+            if (node->for_stmt.body) {
+                execute_statement(self, node->for_stmt.body);
+            }
+
+            if (node->for_stmt.update) {
+                execute_statement(self, node->for_stmt.update);
+            }
+        }
+        break;
+
     case AST_BINARY:
     case AST_UNARY:
     case AST_LITERAL:

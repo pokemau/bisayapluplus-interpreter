@@ -1,9 +1,12 @@
 SUGOD
 
---    KUNG (10 > 5)
---    PUNDOK {
---        IPAKITA: "10 greater than 5"
---    }
+
+    MUGNA NUMERO ctr
+    ALANG SA (ctr = 1, ctr <= 10, ctr = ctr + 1)
+    PUNDOK {
+        IPAKITA: ctr & $
+    }
+
 
 --    MUGNA NUMERO x,y,z=5
 --    MUGNA LETRA a_1='n'
@@ -14,9 +17,9 @@ SUGOD
 --
 --    IPAKITA: x & t & z & $ & a_1 & [#] & "last"
 
-    MUGNA NUMERO xyz,abc=100
-    xyz = ((abc*5)/10+10)*-1
-    IPAKITA: xyz
+--    MUGNA NUMERO xyz,abc=100
+--    xyz = ((abc*5)/10+10)*-1
+--    IPAKITA: xyz
 
 
 KATAPUSAN
