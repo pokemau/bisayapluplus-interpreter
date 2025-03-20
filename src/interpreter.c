@@ -11,7 +11,6 @@
 
 #define equality(a, b) ((a) > (b) ? 1 : (a) < (b) ? -1 : 0)
 
-
 // TODO:
 // fix evaluate AST_BINARY
 
@@ -176,17 +175,44 @@ static value evaluate(interpreter *self, ast_node *node) {
         val = evaluate(self, node->assignment.expr);
         env_assign(self->env, node->assignment.var->lexeme, val);
         return val;
+    case AST_UNARY:
+        // token *op;
+        // ast_node *expr;
+        val = evaluate(self, node->unary.expr);
+        switch (node->unary.op->type) {
+        case MINUS:
+            switch (val.type) {
+            case VAL_NUMERO:
+                return value_create_numero(-val.as.numero);
+            case VAL_TIPIK:
+                return value_create_tipik(-val.as.tipik);
+            default:
+                interp_error(node->unary.op->line, "Operand NaN");
+            }
+            break;
+        case DILI:
+            switch (val.type) {
+            case VAL_TINUOD:
+                return value_create_tinuod(!val.as.tinuod);
+            default:
+                interp_error(node->unary.op->line,
+                             "Operand of 'DILI' must be of type 'TINUOD'");
+            }
+        default:
+            break;
+        }
+        break;
     case AST_BINARY:
         left = evaluate(self, node->binary.left);
         right = evaluate(self, node->binary.right);
 
-//        if (left.type == VAL_LETRA || right.type != VAL_LETRA){
-//            char buf[128];
-//            snprintf(buf, 128, "Invalid operand '%c'",
-//                     left.type == VAL_LETRA ? left.as.letra : right.as.letra);
-//            interp_error(node->binary.op->line, buf);
-//            return value_create_null();
-//        }
+        if (left.type == VAL_LETRA || right.type == VAL_LETRA) {
+            char buf[128];
+            snprintf(buf, 128, "Invalid operand '%c'",
+                     left.type == VAL_LETRA ? left.as.letra : right.as.letra);
+            interp_error(node->binary.op->line, buf);
+            return value_create_null();
+        }
 
         switch (node->binary.op->type) {
         case PLUS:
