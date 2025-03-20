@@ -9,7 +9,7 @@
 - [ ] refactor maybe ang get_token_substring
 
 ## Parser
-- [ ] parse stuff inside '[]'
+- [ ] IPAKITA: parse stuff inside '[]'
 
 ## Interpreter
 - [ ] do not allow re-declaring variables of different type

@@ -254,15 +254,26 @@ static value evaluate(interpreter *self, ast_node *node) {
 
         switch (node->binary.op->type) {
         case PLUS:
+            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+                return value_create_tipik(left.as.tipik + right.as.tipik);
+
             return value_create_numero(left.as.numero + right.as.numero);
         case MINUS:
+            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+                return value_create_tipik(left.as.tipik - right.as.tipik);
             return value_create_numero(left.as.numero - right.as.numero);
         case STAR:
+            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+                return value_create_tipik(left.as.tipik * right.as.tipik);
             return value_create_numero(left.as.numero * right.as.numero);
+        case MODULO:
+            return value_create_numero(left.as.numero % right.as.numero);
         case SLASH:
             if (right.as.numero == 0) {
                 interp_error(node->binary.op->line, "Division by zero");
             }
+            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+                return value_create_tipik(left.as.tipik / right.as.tipik);
             return value_create_numero(left.as.numero / right.as.numero);
         case EQUAL_EQUAL:
             return value_create_tinuod(left.as.tinuod == right.as.tinuod);
