@@ -173,10 +173,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         }
         break;
 
-    case AST_BINARY:
-    case AST_UNARY:
-    case AST_LITERAL:
-    case AST_VARIABLE:
+    default:
         break;
     }
 }

@@ -26,9 +26,6 @@ KATAPUSAN
 
 -- TODO
 
---[LEXER]
--- refactor maybe ang add_token
--- refactor maybe ang get_token_substring
 
 
 --[PARSER]

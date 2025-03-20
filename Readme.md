@@ -13,3 +13,4 @@
 
 ## Interpreter
 - [ ] do not allow re-declaring variables of different type
+- [ ] implement DAWAT:
