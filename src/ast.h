@@ -2,6 +2,7 @@
 #define _AST_H_
 
 #include "token.h"
+#include "util/arena.h"
 
 typedef enum ast_node_type {
     AST_PROGRAM,
@@ -98,7 +99,7 @@ struct ast_node {
     };
 };
 
-ast_node *ast_new_node(ast_node_type type);
+ast_node *ast_new_node(arena *arena, ast_node_type type);
 void ast_free_node(ast_node *node);
 
 #endif

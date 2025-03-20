@@ -47,11 +47,9 @@ static bool match(lexer *self, char expected) {
 
 static const char *get_token_substring(lexer *self, int start, int end) {
     int text_len = end - start;
-    char *text = malloc(text_len);
-    if (text == NULL) {
-        lexer_error(self->line, "Failed to allocate mem");
-    }
+    char *text = arena_alloc(&self->arena, text_len + 1);
     strncpy(text, self->source.data + start, text_len);
+    text[text_len] = '\0';
 
     // remove '\n' from string
     int l = strlen(text);
@@ -63,6 +61,16 @@ static const char *get_token_substring(lexer *self, int start, int end) {
 }
 
 static void add_token(lexer *self, TokenType type, void *literal) {
+    if (self->tokens.size >= self->tokens.max) {
+        size_t new_max = self->tokens.max * 2;
+        token *new_list = arena_alloc(&self->arena,
+                                      sizeof(token) * new_max);
+        memcpy(new_list, self->tokens.list,
+               self->tokens.size * sizeof(token));
+        self->tokens.list = new_list;
+        self->tokens.max = new_max;
+        printf("Reallocated tokens");
+    }
 
     if (type == STRING || type == TRUE || type == FALSE || type == CHAR)
         self->start++;
@@ -73,27 +81,12 @@ static void add_token(lexer *self, TokenType type, void *literal) {
         .line = self->line,
         .lexeme = text,
         .type = type,
-        .literal = literal != NULL ? literal : NULL
+        .literal = literal
     };
 
-    // resize tokens list
-    if (self->tokens.size >= self->tokens.max) {
-
-        self->tokens.max *= 1.5;
-        self->tokens.list = realloc(self->tokens.list,
-                                     sizeof(token_list) * self->tokens.max);
-
-        if (self->tokens.list == NULL) {
-            fprintf(stderr, "ERROR:>Failed to resize tokens list\n");
-            exit(1);
-        } else {
-            printf("Reallocated [TOKENS]\n");
-        }
-    }
 }
 
 static void scan_string(lexer *self) {
-    // shit code, refactor
     while(peek(self) != '"' && !is_at_end(self)) {
         advance(self);
     }
@@ -154,10 +147,7 @@ static void scan_number(lexer *self) {
     }
 
     const char *text = get_token_substring(self, self->start, self->current);
-    double *val = malloc(sizeof(double));
-    if (val == NULL) {
-        lexer_error(self->line, "Failed to allocate memory to double");
-    }
+    double *val = arena_alloc(&self->arena, sizeof(double));
     *val = atof(text);
     add_token(self, NUMBER, val);
 }
@@ -283,13 +273,13 @@ static void lexer_scan_token(lexer *self) {
 }
 
 lexer lexer_create(struct lexer_src *source) {
-
     lexer self;
     self.source = *source;
-    self.tokens.list = malloc(sizeof(token_list) * INCREASE);
-
+    self.arena = arena_create(INITIAL_ARENA_SIZE);
     self.tokens.size = 0;
-    self.tokens.max = sizeof(token_list) * INCREASE;
+    self.tokens.max = INITIAL_TOKEN_CAPACITY;
+    self.tokens.list = arena_alloc(&self.arena,
+                                   sizeof(token) * self.tokens.max);
 
     self.start = 0;
     self.current = 0;

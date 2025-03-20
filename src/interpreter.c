@@ -24,9 +24,9 @@ static void interp_error(int line, const char *msg) {
     exit(1);
 }
 
-interpreter interp_create() {
-    interpreter self;
-    self.env = env_create(NULL);
+interpreter *interp_create(arena *arena) {
+    interpreter *self = arena_alloc(arena, sizeof(interpreter));
+    self->env = env_create(NULL, arena);
     return self;
 }
 
@@ -276,17 +276,48 @@ static value evaluate(interpreter *self, ast_node *node) {
                 return value_create_tipik(left.as.tipik / right.as.tipik);
             return value_create_numero(left.as.numero / right.as.numero);
         case EQUAL_EQUAL:
-            return value_create_tinuod(left.as.tinuod == right.as.tinuod);
+            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
+                return value_create_tinuod(
+                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
+                        ==
+                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
+            ));
         case NOT_EQUAL:
-            return value_create_tinuod(left.as.tinuod != right.as.tinuod);
+            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
+                return value_create_tinuod(
+                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
+                        !=
+                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
+            ));
         case LESS:
-            return value_create_tinuod(left.as.tinuod < right.as.tinuod);
+            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
+                return value_create_tinuod(
+                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
+                        <
+                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
+            ));
         case LESS_EQUAL:
-            return value_create_tinuod(left.as.tinuod <= right.as.tinuod);
+            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
+                return value_create_tinuod(
+                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
+                        <=
+                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
+            ));
+            return value_create_tinuod(left.as.numero <= right.as.numero);
         case GREATER:
-            return value_create_tinuod(left.as.tinuod > right.as.tinuod);
+            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
+                return value_create_tinuod(
+                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
+                        >
+                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
+            ));
         case GREATER_EQUAL:
-            return value_create_tinuod(left.as.tinuod >= right.as.tinuod);
+            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
+                return value_create_tinuod(
+                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
+                        >=
+                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
+            ));
         case UG:
             return value_create_tinuod(left.as.tinuod && right.as.tinuod);
         case O:

@@ -2,6 +2,9 @@
 #define _LEXER_H_
 
 #include "token.h"
+#include "util/arena.h"
+
+#define INITIAL_TOKEN_CAPACITY 16
 
 typedef struct lexer_src {
     long len;
@@ -20,6 +23,7 @@ typedef struct lexer {
     int start;
     int current;
     int line;
+    arena arena;
 } lexer;
 
 lexer lexer_create(lexer_src *source);
