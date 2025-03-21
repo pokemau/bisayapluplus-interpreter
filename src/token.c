@@ -1,7 +1,41 @@
 #include "token.h"
 
+#include "util/hashmap.h"
 #include <stdio.h>
 #include <string.h>
+
+hashmap* hm_string_to_tokentype;
+
+void initialize_hashmap(arena* arena) {
+    hm_string_to_tokentype = create_hashmap(18*2, arena);
+    hashmap_put(hm_string_to_tokentype, "UG", (void *)(uintptr_t)UG, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "O", (void *)(uintptr_t)O, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "DILI", (void *)(uintptr_t)DILI, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "NUMERO", (void *)(uintptr_t)NUMERO, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "LETRA", (void *)(uintptr_t)LETRA, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "TIPIK", (void *)(uintptr_t)TIPIK, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "TINUOD", (void *)(uintptr_t)TINUOD, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "SUGOD", (void *)(uintptr_t)SUGOD, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "KATAPUSAN", (void *)(uintptr_t)KATAPUSAN, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "MUGNA", (void *)(uintptr_t)MUGNA, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "IPAKITA", (void *)(uintptr_t)IPAKITA, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "DAWAT", (void *)(uintptr_t)DAWAT, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "KUNG", (void *)(uintptr_t)KUNG, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "WALA", (void *)(uintptr_t)WALA, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "KUNG_WALA", (void *)(uintptr_t)KUNG_WALA, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "KUNG_DILI", (void *)(uintptr_t)KUNG_DILI, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "PUNDOK", (void *)(uintptr_t)PUNDOK, sizeof(TokenType));
+    hashmap_put(hm_string_to_tokentype, "ALANG_SA", (void *)(uintptr_t)ALANG_SA, sizeof(TokenType));
+
+    print_hashmap(hm_string_to_tokentype);
+
+    TokenType temp = (TokenType)(uintptr_t)hashmap_get(hm_string_to_tokentype, "PUNDOK");
+    if (temp == PUNDOK) {
+        printf("It Worked!");
+    }else{
+        printf("It did not work! It was %d\n", temp);
+    }
+}
 
 void print_token(token *t) {
     printf("[%d] %-20s %s\n", t->line, token_val[t->type], t->lexeme);
@@ -173,6 +207,8 @@ void print_token(token *t) {
 TokenType get_token_type(const char *s) {
 
     // TODO: optimize, use better data structure
+
+    // return (TokenType)hashmap_get(hm_string_to_tokentype, s);
 
     TokenType res = IDENTIFIER;
 

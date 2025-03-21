@@ -285,6 +285,8 @@ lexer lexer_create(struct lexer_src *source) {
     self.current = 0;
     self.line = 1;
 
+    initialize_hashmap(&(self.arena));
+
     return self;
 }
 

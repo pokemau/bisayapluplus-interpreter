@@ -1,6 +1,8 @@
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
 
+#include "util/arena.h"
+
 typedef enum TokenType {
     // Characters
     LEFT_BRACE,
@@ -134,6 +136,7 @@ typedef struct token {
     void *literal;
 } token;
 
+void initialize_hashmap(arena* arena);
 const char *token_print_type(TokenType t);
 TokenType get_token_type(const char *s);
 void print_token(token *t);

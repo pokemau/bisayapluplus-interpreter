@@ -19,4 +19,5 @@ add_executable(${PROJECT_NAME}
 
     src/util/dyn_arr.c
     src/util/arena.c
+    src/util/hashmap.c
 )
