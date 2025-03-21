@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "ast.h"
 #include "token.h"
+#include "util/arena.h"
 #include "util/dyn_arr.h"
 
 #include <stdbool.h>
@@ -34,9 +35,10 @@ static token *peek(parser *self);
 static void synchronize(parser *self);
 static void parser_curr(parser *self);
 
-parser parser_create(token_list *tokens) {
+parser parser_create(token_list *tokens, arena *arena) {
     parser self;
     self.tokens = tokens;
+    self.arena = arena;
     self.current = 0;
     self.head = &tokens->list[0];
     return self;
@@ -149,12 +151,8 @@ static ast_node *parse_var_decl(parser *self) {
 
     // TODO: implement allocator functions
     int temp_size = 10;
-    token *names = malloc(sizeof(token) * temp_size);
-    ast_node **inits = malloc(sizeof(ast_node *) * temp_size);
-    if (!names || !inits) {
-        parser_error(self, "Failed to allocate [parse_var_decl]");
-        return NULL;
-    }
+    token *names = arena_alloc(self->arena, sizeof(token) * temp_size);
+    ast_node **inits = arena_alloc(self->arena, sizeof(ast_node *) * temp_size);
     int name_count = 0;
 
     while (!match(self, NEWLINE)) {
@@ -183,9 +181,15 @@ static ast_node *parse_var_decl(parser *self) {
         name_count++;
 
         if (name_count == temp_size) {
-            names = realloc(names, sizeof(token) * (name_count + 10));
-            inits = realloc(inits, sizeof(ast_node *) * (name_count + 10));
             temp_size += 10;
+            token *new_names =
+                arena_alloc(self->arena, sizeof(token) * temp_size);
+            ast_node **new_inits =
+                arena_alloc(self->arena, sizeof(ast_node *) * temp_size);
+            memcpy(new_names, names, name_count * sizeof(token));
+            memcpy(new_inits, inits, name_count * sizeof(ast_node *));
+            names = new_names;
+            inits = new_inits;
         }
 
         if (match(self, COMMA)) {
@@ -201,17 +205,14 @@ static ast_node *parse_var_decl(parser *self) {
 
     if (name_count == 0) {
         parser_error(self, "Expected: Variable name");
-        free(names);
-        // TODO: free each ast_node
-        free(inits);
         return NULL;
     }
 
-    names = realloc(names, sizeof(token) * name_count);
-    inits = realloc(inits, sizeof(ast_node *) * name_count);
+    /*names = realloc(names, sizeof(token) * name_count);*/
+    /*inits = realloc(inits, sizeof(ast_node *) * name_count);*/
 
     expect(self, NEWLINE, "Expected: statement in new line");
-    ast_node *decl = ast_new_node(AST_VAR_DECL);
+    ast_node *decl = ast_new_node(self->arena, AST_VAR_DECL);
     decl->var_decl.names = names;
     decl->var_decl.inits = inits;
     decl->var_decl.name_count = name_count;
@@ -265,26 +266,11 @@ static ast_node *parse_assignment(parser *self) {
         if (!expr) {
             return NULL;
         }
-//        printf("ASSSS:::::::::::::::::::::::::");
-//        parser_curr(self);
-//        if (peek_next(self)->type == NEWLINE)
-//            advance(self);
-
-//        char buf[128];
-//        peek_next(self)->type != NEWLINE
-//            ? snprintf(buf, 128, "'%s' is not assignable",
-//                       peek_next(self)->lexeme)
-//            : snprintf(buf, 128, "Expected: Expression after '%s'",
-//                       peek(self)->lexeme);
-//
-//        if (!expect(self, NEWLINE, buf)) {
-//            return NULL;
-//        }
     }
 
     parser_curr(self);
 
-    ast_node *assign = ast_new_node(AST_ASSIGNMENT);
+    ast_node *assign = ast_new_node(self->arena, AST_ASSIGNMENT);
     assign->assignment.expr = expr;
     assign->assignment.var = var_name;
 
@@ -297,9 +283,8 @@ static ast_node *parse_print_stmt(parser *self) {
     if (!expect(self, COLON, "Expected ':' after 'IPAKITA'"))
         return NULL;
 
-    ast_node **exprs = NULL;
     int temp_size = 10;
-    exprs = malloc(sizeof(ast_node *) * temp_size);
+    ast_node **exprs = arena_alloc(self->arena, sizeof(ast_node *) * temp_size);
     int expr_count = 0;
 
     while (!match(self, NEWLINE)) {
@@ -311,15 +296,12 @@ static ast_node *parse_print_stmt(parser *self) {
 
         exprs[expr_count++] = expr;
 
-        if (expr_count == temp_size) {
-            exprs = realloc(exprs, sizeof(ast_node *) * (expr_count * 10));
-            if (!exprs) {
-                fprintf(stderr,
-                        "ERROR: Failed to resize exprs [parse_print]\n");
-                free(exprs);
-                exit(1);
-            }
+        if (expr_count >= temp_size) {
             temp_size += 10;
+            ast_node **new_exprs =
+                arena_alloc(self->arena, sizeof(ast_node *) * temp_size);
+            memcpy(new_exprs, exprs, sizeof(ast_node *) * expr_count);
+            exprs = new_exprs;
         }
 
         // TODO: check if blank ang next sa &
@@ -343,7 +325,7 @@ static ast_node *parse_print_stmt(parser *self) {
         return NULL;
     }
 
-    ast_node *print = ast_new_node(AST_PRINT);
+    ast_node *print = ast_new_node(self->arena, AST_PRINT);
     print->print.exprs = exprs;
     print->print.expr_count = expr_count;
     return print;
@@ -353,29 +335,29 @@ static ast_node *parse_input_stmt(parser *self) {
     advance(self);
     expect(self, COLON, "Expected ':' after 'DAWAT'");
 
-    ast_node *input = ast_new_node(AST_INPUT);
-    token *vars = NULL;
-
     int temp_size = 10;
-    vars = malloc(sizeof(token) * temp_size);
+    token *vars = arena_alloc(self->arena, sizeof(token) * temp_size);
     if (!vars) {
-        fprintf(stderr, "Failed to allocate vars [parse_input]");
-        exit(1);
+        return NULL;
     }
     int var_count = 0;
 
     while (true) {
         token *var = expect(self, IDENTIFIER, "Expected variable name");
         vars[var_count++] = *var;
-        if (var_count == temp_size) {
-            vars = realloc(vars, sizeof(token) * (var_count + 10));
+        if (var_count >= temp_size) {
             temp_size += 10;
+            token *new_vars =
+                arena_alloc(self->arena, sizeof(token) * temp_size);
+            memcpy(new_vars, vars, sizeof(token) * var_count);
+            vars = new_vars;
         }
         if (match(self, NEWLINE))
             break;
         expect(self, COMMA, "EXPECT COMMA");
     }
 
+    ast_node *input = ast_new_node(self->arena, AST_INPUT);
     input->input.vars = vars;
     input->input.var_count = var_count;
     return input;
@@ -390,16 +372,11 @@ static ast_node *parse_block(parser *self) {
     if (!expect(self, NEWLINE, "Expected: Statement in new line [her]"))
         return NULL;
 
-    ast_node *block = ast_new_node(AST_BLOCK);
     int temp_size = 10;
-    ast_node **stmts = malloc(sizeof(ast_node *) * temp_size);
-    if (!stmts) {
-        fprintf(stderr, "Failed to alloc [parse_block]");
-        exit(1);
-    }
+    ast_node **stmts = arena_alloc(self->arena,
+                                   sizeof(ast_node *) * temp_size);
     int stmt_count = 0;
 
-    int line = peek(self)->line;
     bool found = false;
 
     while (!is_at_end(self)) {
@@ -418,11 +395,15 @@ static ast_node *parse_block(parser *self) {
         if (stmt)
             stmts[stmt_count++] = stmt;
 
-        if (stmt_count == temp_size) {
-            stmts = realloc(stmts, sizeof(ast_node *) * (stmt_count + 10));
+        if (stmt_count >= temp_size) {
             temp_size += 10;
+            ast_node **new_stmts = arena_alloc(self->arena,
+                                               sizeof(ast_node *));
+            memcpy(new_stmts, stmts, sizeof(ast_node *) * stmt_count);
+            stmts = new_stmts;
         }
     }
+
 
     if (!found) {
         // TODO:
@@ -435,8 +416,7 @@ static ast_node *parse_block(parser *self) {
     advance(self);
     expect(self, NEWLINE, "Expected: Statement in new line");
 
-    stmts = realloc(stmts, sizeof(ast_node *) * stmt_count);
-
+    ast_node *block = ast_new_node(self->arena, AST_BLOCK);
     if (stmts) {
         block->block.statements = *stmts;
     }
@@ -468,7 +448,7 @@ static ast_node *parse_if_stmt(parser *self) {
         return NULL;
     }
 
-    ast_node *if_stmt = ast_new_node(AST_IF);
+    ast_node *if_stmt = ast_new_node(self->arena, AST_IF);
     if_stmt->if_stmt.condition = condition;
     if_stmt->if_stmt.then_block = then_block;
 
@@ -512,7 +492,7 @@ static ast_node *parse_else_stmt(parser *self) {
         if (!then_block)
             return NULL;
 
-        ast_node *stmt = ast_new_node(AST_ELSE_IF);
+        ast_node *stmt = ast_new_node(self->arena, AST_ELSE_IF);
         stmt->if_stmt.condition = condition;
         stmt->if_stmt.then_block = then_block;
 
@@ -532,7 +512,7 @@ static ast_node *parse_else_stmt(parser *self) {
             return NULL;
         }
 
-        ast_node *stmt = ast_new_node(AST_ELSE);
+        ast_node *stmt = ast_new_node(self->arena, AST_ELSE);
         stmt->if_stmt.then_block = block;
         return stmt;
     }
@@ -551,8 +531,7 @@ static ast_node *parse_for_stmt(parser *self) {
         if (!init) {
             return NULL;
         }
-    }
-    else {
+    } else {
         parser_error(self, "Expected: assignment");
         return NULL;
     }
@@ -563,10 +542,8 @@ static ast_node *parse_for_stmt(parser *self) {
     if (peek_next(self)->type != EQUAL_EQUAL &&
         peek_next(self)->type != NOT_EQUAL &&
         peek_next(self)->type != GREATER_EQUAL &&
-        peek_next(self)->type != LESS_EQUAL &&
-        peek_next(self)->type != LESS &&
-        peek_next(self)->type != GREATER
-    ) {
+        peek_next(self)->type != LESS_EQUAL && peek_next(self)->type != LESS &&
+        peek_next(self)->type != GREATER) {
         parser_error(self, "Invalid condition");
         return NULL;
     }
@@ -592,7 +569,7 @@ static ast_node *parse_for_stmt(parser *self) {
 
     ast_node *body = parse_block(self);
 
-    ast_node *for_stmt = ast_new_node(AST_FOR);
+    ast_node *for_stmt = ast_new_node(self->arena, AST_FOR);
     for_stmt->for_stmt.init = init;
     for_stmt->for_stmt.condition = condition;
     for_stmt->for_stmt.update = update;
@@ -618,7 +595,7 @@ static ast_node *parse_binary(parser *self, int precedence) {
         advance(self);
         ast_node *right = parse_binary(self, op_precedence + 1);
 
-        ast_node *binary = ast_new_node(AST_BINARY);
+        ast_node *binary = ast_new_node(self->arena, AST_BINARY);
         binary->binary.op = op;
         binary->binary.left = left;
         binary->binary.right = right;
@@ -655,7 +632,7 @@ static ast_node *parse_unary(parser *self) {
     if (match(self, PLUS) || match(self, MINUS) || match(self, DILI)) {
         token *op = advance(self);
         ast_node *expr = parse_unary(self);
-        ast_node *unary = ast_new_node(AST_UNARY);
+        ast_node *unary = ast_new_node(self->arena, AST_UNARY);
         unary->unary.op = op;
         unary->unary.expr = expr;
         return unary;
@@ -668,13 +645,13 @@ static ast_node *parse_primary(parser *self) {
     if (!t)
         parser_error(self, "Unexpected end of input");
 
-    if (match(self, CHAR) || match(self, NUMBER) || match(self, STRING) || match(self, TRUE) ||
-        match(self, FALSE)) {
-        ast_node *literal = ast_new_node(AST_LITERAL);
+    if (match(self, CHAR) || match(self, NUMBER) || match(self, STRING) ||
+        match(self, TRUE) || match(self, FALSE)) {
+        ast_node *literal = ast_new_node(self->arena, AST_LITERAL);
         literal->literal.value = advance(self);
         return literal;
     } else if (match(self, IDENTIFIER)) {
-        ast_node *var = ast_new_node(AST_VARIABLE);
+        ast_node *var = ast_new_node(self->arena, AST_VARIABLE);
         var->variable.name = advance(self);
         return var;
     } else if (match(self, LEFT_PAREN)) {
@@ -687,7 +664,7 @@ static ast_node *parse_primary(parser *self) {
 
         while (!match(self, NEWLINE)) {
             if (match(self, RIGHT_BRACKET)) {
-                ast_node *res = ast_new_node(AST_LITERAL);
+                ast_node *res = ast_new_node(self->arena, AST_LITERAL);
                 res->literal.value = peek_prev(self);
                 advance(self);
 
@@ -724,7 +701,7 @@ static ast_node *parse_primary(parser *self) {
     } else if (match(self, DOLLAR)) {
         printf("DOLLAR\n");
         advance(self);
-        ast_node *literal = ast_new_node(AST_LITERAL);
+        ast_node *literal = ast_new_node(self->arena, AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));
         literal->literal.value->type = DOLLAR;
         literal->literal.value->lexeme = "$";
@@ -737,20 +714,33 @@ static ast_node *parse_primary(parser *self) {
 }
 
 ast_node *parser_parse(parser *self) {
-    ast_node *program = ast_new_node(AST_PROGRAM);
+    ast_node *program = ast_new_node(self->arena, AST_PROGRAM);
     expect(self, SUGOD, "Expected 'SUGOD' at start of program");
     expect(self, NEWLINE, "Expected statement in new line");
 
-    ast_node *stmts = dynarray_create(ast_node);
+    int temp_size = 10;
+    ast_node *stmts = arena_alloc(self->arena,
+                                  sizeof(ast_node) * temp_size);
+    int stmt_count = 0;
+    /*ast_node *stmts = dynarray_create(ast_node);*/
 
     while (!is_at_end(self)) {
 
-        if (match(self, NEWLINE))
+        if (match(self, NEWLINE)) {
             advance(self);
+            continue;
+        }
 
         ast_node *stmt = parse_statement(self);
         if (stmt)
-            dynarray_push(stmts, *stmt);
+            stmts[stmt_count++] = *stmt;
+        if (stmt_count >= temp_size) {
+            temp_size += 10;
+            ast_node *n = arena_alloc(self->arena,
+                                      sizeof(ast_node) * temp_size);
+            memcpy(n, stmts, sizeof(ast_node) * stmt_count);
+            stmts = n;
+        }
     }
 
     // TODO:
@@ -762,7 +752,7 @@ ast_node *parser_parse(parser *self) {
     previous(self);
     expect(self, KATAPUSAN, "Expected 'KATAPUSAN' at the end of program");
 
-    program->program.stmt_count = dynarray_length(stmts);
+    program->program.stmt_count = stmt_count;
     program->program.statements = stmts;
 
     return program;

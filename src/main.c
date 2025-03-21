@@ -2,20 +2,26 @@
 #include <stdlib.h>
 
 #include "lexer.h"
-#include "token.h"
 #include "util.h"
 #include "parser.h"
 #include "interpreter.h"
+#include "util/arena.h"
 
 
 lexer s;
 parser p;
-interpreter i;
+interpreter *i;
+arena a;
 
 void run(const char *data, size_t total) {
-    s = lexer_create(&(lexer_src){.len = total, .data = data});
+    a = arena_create(INITIAL_ARENA_SIZE);
+
+    s = lexer_create(&(lexer_src) {
+        .len = total, .data = data
+    });
     lexer_gen_tokens(&s);
-    p = parser_create(&s.tokens);
+
+    p = parser_create(&s.tokens, &a);
 
     ast_node *ast = parser_parse(&p);
 
@@ -24,25 +30,10 @@ void run(const char *data, size_t total) {
     printf("=========================\n");
     ast_print(ast, 0);
 
-    // TODO:
-    // Free allocated memory in parser
+    i = interp_create(&a);
+    interp_execute(i, ast);
 
-    i = interp_create();
-    interp_execute(&i, ast);
-
-    // free ast_nodes after program
-//    for (int i = 0; i < ast->program.stmt_count; i++) {
-//            ast_free_node(&ast[i]);
-//    }
-
-    // free allocated stuff
-    free(s.tokens.list);
-    for (int i = 0; i < s.tokens.size; i++) {
-        token *curr = &s.tokens.list[i];
-        if (curr->literal != NULL) {
-            free(curr->literal);
-        }
-    }
+    arena_free(&a);
 }
 
 void run_file(const char *file_name) {

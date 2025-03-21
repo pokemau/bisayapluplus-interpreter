@@ -18,4 +18,5 @@ add_executable(${PROJECT_NAME}
     src/interpreter.c
 
     src/util/dyn_arr.c
+    src/util/arena.c
 )

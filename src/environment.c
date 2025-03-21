@@ -1,4 +1,5 @@
 #include "environment.h"
+#include "util/arena.h"
 #include "value.h"
 
 #include <stdlib.h>
@@ -10,10 +11,11 @@ void env_error(int line, const char *msg) {
     exit(1);
 }
 
-environment *env_create(environment *parent) {
-    environment *self = malloc(sizeof(environment));
+environment *env_create(environment *parent, arena *arena) {
+    environment *self = arena_alloc(arena, sizeof(environment));
     self->list = NULL;
     self->parent = parent;
+    self->arena = arena;
     return self;
 }
 
@@ -30,8 +32,10 @@ void env_free(environment *self) {
 }
 
 void env_define(environment *self, const char *name, value val) {
-    env_elem *elem = malloc(sizeof(env_elem));
-    elem->name = strdup(name);
+    env_elem *elem = arena_alloc(self->arena, sizeof(env_elem));
+    size_t name_len = strlen(name) + 1;
+    elem->name = arena_alloc(self->arena, name_len);
+    memcpy(elem->name, name, name_len);
     elem->value = val;
     elem->next = self->list;
     self->list = elem;
@@ -62,7 +66,6 @@ bool env_assign(environment *self, const char *name, value val) {
         env_elem *elem = curr->list;
         while (elem) {
             if (strcmp(elem->name, name) == 0) {
-                value_free(elem->value);
                 elem->value = val;
                 return true;
             }

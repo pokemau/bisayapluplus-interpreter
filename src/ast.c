@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-ast_node *ast_new_node(ast_node_type type) {
-    ast_node *node = (ast_node *)malloc(sizeof(ast_node));
-    if (!node)
-        bpp_error(0, "Failed to allocate AST node");
+ast_node *ast_new_node(arena *arena, ast_node_type type) {
+    /*ast_node *node = (ast_node *)malloc(sizeof(ast_node));*/
+    ast_node *node = arena_alloc(arena, sizeof(ast_node));
     node->type = type;
     return node;
 }

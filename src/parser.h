@@ -3,15 +3,17 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "util/arena.h"
 
 typedef struct parser {
     token_list *tokens;
     int current;
     int token_count;
     token *head;
+    arena *arena;
 } parser;
 
-parser parser_create(token_list *tokens);
+parser parser_create(token_list *tokens, arena *arena);
 
 
 void ast_print(ast_node *node, int depth);
