@@ -1,4 +1,5 @@
 #include "hashmap.h"
+#include "../token.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -25,31 +26,28 @@ static size_t hash(const char *key, const size_t table_size) {
     return hash;
 }
 
-static hashmap_entry *set_key_value(const char *key, const void *value, size_t val_size, arena* arena) {
+static hashmap_entry *set_key_value(const char *key, const size_t value, arena* arena) {
     hashmap_entry* entry = arena_alloc(arena, sizeof(hashmap_entry));
     
     entry->key = arena_alloc(arena, strlen(key) + 1);
     strcpy(entry->key, key);
 
-    entry->val = arena_alloc(arena, sizeof(enum_val*));
-    entry->val->value = arena_alloc(arena, val_size);
-    memcpy(entry->val->value, &value, val_size);
-    entry->val->size = val_size;
+    entry->value = value;
 
     return entry;
 }
 
 // value: enum value
 // size_t: enum size
-void hashmap_put(hashmap *self, const char *key, const void *value, const size_t val_size) {
+void hashmap_put(hashmap *self, const char *key, const size_t value) {
     size_t slot = hash(key, self->size);
 
     hashmap_entry *entry = self->entries[slot];
 
     // entry is not yet occupied, meaning it is safe to insert
     if (entry == NULL) {
-        self->entries[slot] = set_key_value(key, value, val_size, self->arena);
-        printf("Added %s to %d\n", key, slot);
+        self->entries[slot] = set_key_value(key, value, self->arena);
+        // printf("Added %s to %d\n", key, slot);
         return;
     }
 
@@ -58,15 +56,12 @@ void hashmap_put(hashmap *self, const char *key, const void *value, const size_t
 
 
     do {
-        printf("Aak I need to move\n");
+        // printf("Aak I need to move\n");
         // if the current entry has the exact same key as our input
         if (entry != NULL && strcmp(entry->key, key) == 0) {
             // replace the value of the entry
-            entry->val = arena_alloc(self->arena, sizeof(enum_val));
-            entry->val->value = arena_alloc(self->arena, val_size);
-            memcpy(entry->val->value, value, val_size);
-            entry->val->size = val_size;
-            printf("Added %s to %d\n", key, traversed_slot);
+            entry->value = value;
+            // printf("Added %s to %d\n", key, traversed_slot);
             return;
         }
 
@@ -77,8 +72,8 @@ void hashmap_put(hashmap *self, const char *key, const void *value, const size_t
     
     // If entry is null, it means we found a free slot
     if (entry == NULL) {
-        self->entries[traversed_slot] = set_key_value(key, value, val_size, self->arena);
-        printf("Added %s to %d\n", key, traversed_slot);
+        self->entries[traversed_slot] = set_key_value(key, value, self->arena);
+        // printf("Added %s to %d\n", key, traversed_slot);
     }
     // if traversed slot returned to initial slot, it means there are no free entry to be occupied
     else if (traversed_slot == slot) {
@@ -88,14 +83,14 @@ void hashmap_put(hashmap *self, const char *key, const void *value, const size_t
 
 }
 
-void* hashmap_get(hashmap* self, const char* key) {
+size_t hashmap_get(hashmap* self, const char* key) {
     size_t slot = hash(key, self->size);
 
     hashmap_entry* entry = self->entries[slot];
 
     // if the entry is null, return NULL because this key has not been set yet
     if (entry == NULL) {
-        return NULL;
+        return (size_t)IDENTIFIER;
     }
 
     // else move to the next slot until we found a match
@@ -104,7 +99,7 @@ void* hashmap_get(hashmap* self, const char* key) {
         // if the current entry has the exact same key as our input
         if (entry && strcmp(entry->key, key) == 0) {
             // return the value
-            return entry->val->value;
+            return entry->value;
         }
 
         // else move to the next slot, modulo to return at start if last element
@@ -113,7 +108,8 @@ void* hashmap_get(hashmap* self, const char* key) {
     
     // if we get back from the start slot when traversing, it means we did not set that key and the hashmap is full
     // if the entry is NULL then we traverse all possible slots but none matched
-    return NULL;
+    // so it is an identifier
+    return (size_t)IDENTIFIER;
 }
 
 void print_hashmap(hashmap *self) {
@@ -127,7 +123,7 @@ void print_hashmap(hashmap *self) {
             continue;
         }
         char *key = self->entries[i]->key;
-        enum_val *val = self->entries[i]->val;
-        printf("%d: Key: %s, Value: %d\n", i, key != NULL ? key : "NULL" , val != NULL ? val->value : 0);
+        size_t value = self->entries[i]->value;
+        printf("%d: Key: %s, Value: %d\n", i, key != NULL ? key : "NULL" , value);
     }
 }
