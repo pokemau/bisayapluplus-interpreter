@@ -45,7 +45,7 @@ static bool match(lexer *self, char expected) {
     return true;
 }
 
-static const char *get_token_substring(lexer *self, int start, int end) {
+static char *get_token_substring(lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = arena_alloc(&self->arena, text_len + 1);
     strncpy(text, self->source.data + start, text_len);
@@ -112,6 +112,7 @@ static void scan_string(lexer *self) {
 
 static void scan_char(lexer *self, const bool is_input) {
     // special case for sub lexer handling user input
+    // need to separate user input logic bruh
     if (is_input) {
         self->start = self->current-1;
         self->current--;
@@ -119,7 +120,18 @@ static void scan_char(lexer *self, const bool is_input) {
             advance(self);
         }
         advance(self);
-        const char *text = get_token_substring(self, self->start, self->current);
+        char *text = get_token_substring(self, self->start, self->current);
+
+        // remove trailing spaces
+        int i = strlen(text) - 1;
+        while (i > 0) {
+            if (text[i] == ' ' || text[i] == '\n' || text[i] == '\t')
+                i--;
+            else
+                break;
+        }
+        text[i+1] = '\0';
+
         // might remove later if the feature of user input TINUOD is not a thing
         self->start--;
         if (strcmp(text, "OO") == 0) {
