@@ -110,7 +110,29 @@ static void scan_string(lexer *self) {
     advance(self);
 }
 
-static void scan_char(lexer *self) {
+static void scan_char(lexer *self, const bool is_input) {
+    // special case for sub lexer handling user input
+    if (is_input) {
+        self->start = self->current-1;
+        self->current--;
+        while (peek_next(self) != ',' && !is_at_end(self)){
+            advance(self);
+        }
+        advance(self);
+        const char *text = get_token_substring(self, self->start, self->current);
+        // might remove later if the feature of user input TINUOD is not a thing
+        self->start--;
+        if (strcmp(text, "OO") == 0) {
+            add_token(self, TRUE, NULL);
+        } else if (strcmp(text, "DILI") == 0) {
+            add_token(self, FALSE, NULL);
+        } else{
+            add_token(self, CHAR, (void*)text);
+        }
+        return;
+    }
+
+
     if (isalnum(peek(self)) && (peek_next(self) == '\'')) {
         advance(self);
         advance(self);
@@ -202,7 +224,8 @@ static token *previous(lexer *self) {
     return &self->tokens.list[self->tokens.size-1];
 }
 
-static void lexer_scan_token(lexer *self) {
+// might have to separate user input logic if I have time
+static void lexer_scan_token(lexer *self, const bool is_input) {
     char c = advance(self);
 
     switch(c) {
@@ -256,12 +279,15 @@ static void lexer_scan_token(lexer *self) {
             }
             break;
 
-        case '\'': scan_char(self);                       break;
+        case '\'': scan_char(self, is_input);                       break;
         case '"': scan_string(self);                      break;
 
         default:
             if (isdigit(c)) {
                 scan_number(self);
+            }
+            else if (is_alpha(c) && is_input) {
+                scan_char(self, is_input);
             } else if (is_alpha(c)) {
                 scan_identifier(self);
             } else {
@@ -285,7 +311,7 @@ lexer lexer_create(struct lexer_src *source) {
     self.current = 0;
     self.line = 1;
 
-    initialize_hashmap(&(self.arena));
+    initialize_token_hashmap(&(self.arena));
 
     return self;
 }
@@ -302,11 +328,15 @@ static void print_tokens(lexer *self) {
     printf("\n");
 }
 
-void lexer_gen_tokens(lexer *self) {
+void lexer_gen_tokens(lexer *self, const bool is_input) {
     while (!is_at_end(self)) {
-        lexer_scan_token(self);
+        lexer_scan_token(self, is_input);
         self->start = self->current;
     }
 
     print_tokens(self);
+}
+
+void lexer_add_EOF(lexer *self) {
+    add_token(self, EOFILE, NULL);
 }

@@ -17,6 +17,7 @@ parser parser_create(token_list *tokens, arena *arena);
 
 
 void ast_print(ast_node *node, int depth);
+ast_node **sub_parser_parse(parser* self, size_t expression_count, token* variables);
 ast_node *parser_parse(parser *self);
 
 // void parse(parser *self);

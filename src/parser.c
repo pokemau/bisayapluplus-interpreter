@@ -22,10 +22,10 @@ static ast_node *parse_assignment(parser *self);
 
 static ast_node *parse_block(parser *self);
 
-static ast_node *parse_expression(parser *self);
-static ast_node *parse_binary(parser *self, int precedence);
-static ast_node *parse_unary(parser *self);
-static ast_node *parse_primary(parser *self);
+static ast_node *parse_expression(parser *self, TokenType d_type);
+static ast_node *parse_binary(parser *self, TokenType d_type , int precedence);
+static ast_node *parse_unary(parser *self, TokenType d_type);
+static ast_node *parse_primary(parser *self, TokenType d_type);
 
 static int get_precedence(TokenType type);
 
@@ -41,6 +41,7 @@ parser parser_create(token_list *tokens, arena *arena) {
     self.arena = arena;
     self.current = 0;
     self.head = &tokens->list[0];
+    self.token_count = tokens->size;
     return self;
 }
 
@@ -169,7 +170,7 @@ static ast_node *parse_var_decl(parser *self) {
         ast_node *init = NULL;
         if (match(self, EQUAL)) {
             advance(self);
-            init = parse_expression(self);
+            init = parse_expression(self, d_type);
             if (!init) {
                 free(names);
                 free(inits);
@@ -262,7 +263,7 @@ static ast_node *parse_assignment(parser *self) {
             return NULL;
         }
     } else {
-        expr = parse_expression(self);
+        expr = parse_expression(self, UNKNOWN);
         if (!expr) {
             return NULL;
         }
@@ -288,7 +289,8 @@ static ast_node *parse_print_stmt(parser *self) {
     int expr_count = 0;
 
     while (!match(self, NEWLINE)) {
-        ast_node *expr = parse_expression(self);
+        // added STRING datatype here but might not work
+        ast_node *expr = parse_expression(self, UNKNOWN);
         if (!expr) {
             free(exprs);
             return NULL;
@@ -432,7 +434,7 @@ static ast_node *parse_if_stmt(parser *self) {
     if (!expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'"))
         return NULL;
 
-    ast_node *condition = parse_expression(self);
+    ast_node *condition = parse_expression(self, TINUOD);
     if (!condition) {
         return NULL;
     }
@@ -475,7 +477,7 @@ static ast_node *parse_else_stmt(parser *self) {
         advance(self);
         if (!expect(self, LEFT_PAREN, "Expected: '(' after 'KUNG DILI'"))
             return NULL;
-        ast_node *condition = parse_expression(self);
+        ast_node *condition = parse_expression(self, TINUOD);
         if (!condition) {
             return NULL;
         }
@@ -548,7 +550,7 @@ static ast_node *parse_for_stmt(parser *self) {
         return NULL;
     }
 
-    ast_node *condition = parse_expression(self);
+    ast_node *condition = parse_expression(self, TINUOD);
     if (!condition) {
         return NULL;
     }
@@ -577,12 +579,12 @@ static ast_node *parse_for_stmt(parser *self) {
     return for_stmt;
 }
 
-static ast_node *parse_expression(parser *self) {
-    return parse_binary(self, 0);
+static ast_node *parse_expression(parser *self, TokenType d_type) {
+    return parse_binary(self, d_type, 0);
 }
 
-static ast_node *parse_binary(parser *self, int precedence) {
-    ast_node *left = parse_unary(self);
+static ast_node *parse_binary(parser *self, TokenType d_type, int precedence) {
+    ast_node *left = parse_unary(self, d_type);
     if (!left)
         return NULL;
 
@@ -593,7 +595,7 @@ static ast_node *parse_binary(parser *self, int precedence) {
             break;
 
         advance(self);
-        ast_node *right = parse_binary(self, op_precedence + 1);
+        ast_node *right = parse_binary(self, d_type, op_precedence + 1);
 
         ast_node *binary = ast_new_node(self->arena, AST_BINARY);
         binary->binary.op = op;
@@ -628,19 +630,19 @@ static int get_precedence(TokenType type) {
     }
 }
 
-static ast_node *parse_unary(parser *self) {
+static ast_node *parse_unary(parser *self, TokenType d_type) {
     if (match(self, PLUS) || match(self, MINUS) || match(self, DILI)) {
         token *op = advance(self);
-        ast_node *expr = parse_unary(self);
+        ast_node *expr = parse_unary(self, d_type);
         ast_node *unary = ast_new_node(self->arena, AST_UNARY);
         unary->unary.op = op;
         unary->unary.expr = expr;
         return unary;
     }
-    return parse_primary(self);
+    return parse_primary(self, d_type);
 }
 
-static ast_node *parse_primary(parser *self) {
+static ast_node *parse_primary(parser *self, TokenType d_type) {
     token *t = peek(self);
     if (!t)
         parser_error(self, "Unexpected end of input");
@@ -656,7 +658,7 @@ static ast_node *parse_primary(parser *self) {
         return var;
     } else if (match(self, LEFT_PAREN)) {
         advance(self);
-        ast_node *expr = parse_expression(self);
+        ast_node *expr = parse_expression(self, d_type);
         expect(self, RIGHT_PAREN, "Expected ')' after expression");
         return expr;
     } else if (match(self, LEFT_BRACKET)) {
@@ -711,6 +713,17 @@ static ast_node *parse_primary(parser *self) {
 
     parser_error(self, "Expected expression");
     return NULL;
+}
+
+ast_node **sub_parser_parse(parser* self, size_t expression_count, token* variables) {
+    ast_node **exprs = arena_alloc(self->arena, sizeof(ast_node*) * expression_count);
+    int i = 0;
+    for (; i < expression_count; i++) {
+        ast_node *expression = parse_expression(self, UNKNOWN);
+        advance(self);
+        exprs[i] = expression;
+    }
+    return exprs;
 }
 
 ast_node *parser_parse(parser *self) {
