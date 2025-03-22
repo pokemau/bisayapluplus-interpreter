@@ -79,3 +79,45 @@ value_type get_variable_type(value val) {
     }
     return val.type;
 }
+
+// TIPIK > LETRA > NUMERO > TINUOD
+void value_precedence_convert(value* x, value* y) {
+    value tempx, tempy;
+    value_type final_type;
+    if (x->type == VAL_TIPIK || y->type == VAL_TIPIK) final_type = VAL_TIPIK;
+    else if (x->type == VAL_LETRA || y->type == VAL_LETRA) final_type = VAL_LETRA;
+    else if (x->type == VAL_NUMERO || y->type == VAL_NUMERO) final_type = VAL_NUMERO;
+    else final_type = VAL_TINUOD;
+
+    switch (final_type) {
+    case VAL_TIPIK:
+        tempx = value_create_tipik(x->type == VAL_TIPIK ? x->as.tipik :
+            x->type == VAL_LETRA ? (double)x->as.letra :
+            x->type == VAL_NUMERO ? (double)x->as.numero :
+            (double)x->as.tinuod);
+        tempy = value_create_tipik(y->type == VAL_TIPIK ? y->as.tipik :
+            y->type == VAL_LETRA ? (double)y->as.letra :
+            y->type == VAL_NUMERO ? (double)y->as.numero :
+            (double)y->as.tinuod);
+
+    case VAL_LETRA:
+        tempx = value_create_letra(x->type == VAL_LETRA ? x->as.letra :
+            x->type == VAL_NUMERO ? (char)x->as.numero :
+            (char)x->as.tinuod);
+        tempy = value_create_letra(y->type == VAL_LETRA ? y->as.letra :
+            y->type == VAL_NUMERO ? (char)y->as.numero :
+            (char)y->as.tinuod);
+    case VAL_NUMERO:
+        tempx = value_create_numero(x->type == VAL_NUMERO ? x->as.numero :
+            (long)x->as.tinuod);
+        tempy = value_create_numero(y->type == VAL_NUMERO ? y->as.numero :
+            (long)y->as.tinuod);
+    case VAL_TINUOD:
+        break;  //if they reach this, both values are already booleans (tinuods)
+    default:
+        break;// VAL_NULL or logic error happened
+    }
+
+    x = &tempx;
+    y = &tempy;
+}

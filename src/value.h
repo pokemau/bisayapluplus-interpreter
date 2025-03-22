@@ -35,5 +35,6 @@ void value_free(value self);
 void initialize_value_hashmap(arena* arena);
 char* get_string_from_value_type(value_type type);
 value_type get_variable_type(value val);
+void value_precedence_convert(value* x, value* y);
 
 #endif
