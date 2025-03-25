@@ -325,7 +325,7 @@ static value evaluate(interpreter *self, ast_node *node) {
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero + right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod + right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod + right.as.tinuod);
 
         case MINUS:
             if (left.type == VAL_TIPIK)
@@ -333,14 +333,14 @@ static value evaluate(interpreter *self, ast_node *node) {
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero - right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod - right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod - right.as.tinuod);
         case STAR:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik * right.as.tipik);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero * right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod * right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod * right.as.tinuod);
         case MODULO:
             if (left.type != VAL_NUMERO)
                 interp_error(node->binary.op->line, "Modulo only works with NUMEROs");
@@ -354,60 +354,60 @@ static value evaluate(interpreter *self, ast_node *node) {
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero / right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod / right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod / right.as.tinuod);
         case EQUAL_EQUAL:
             if (left.type == VAL_TIPIK)
-                return value_create_tipik(left.as.tipik == right.as.tipik);
+                return value_create_tinuod(left.as.tipik == right.as.tipik);
             else if (left.type == VAL_NUMERO)
-                return value_create_numero(left.as.numero == right.as.numero);
+                return value_create_tinuod(left.as.numero == right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod == right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod == right.as.tinuod);
         case NOT_EQUAL:
             if (left.type == VAL_TIPIK)
-                return value_create_tipik(left.as.tipik != right.as.tipik);
+                return value_create_tinuod(left.as.tipik != right.as.tipik);
             else if (left.type == VAL_NUMERO)
-                return value_create_numero(left.as.numero != right.as.numero);
+                return value_create_tinuod(left.as.numero != right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod != right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod != right.as.tinuod);
         case LESS:
             if (left.type == VAL_TIPIK)
-                return value_create_tipik(left.as.tipik < right.as.tipik);
+                return value_create_tinuod(left.as.tipik < right.as.tipik);
             else if (left.type == VAL_NUMERO)
-                return value_create_numero(left.as.numero < right.as.numero);
+                return value_create_tinuod(left.as.numero < right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod < right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod < right.as.tinuod);
         case LESS_EQUAL:
             if (left.type == VAL_TIPIK)
-                return value_create_tipik(left.as.tipik <= right.as.tipik);
+                return value_create_tinuod(left.as.tipik <= right.as.tipik);
             else if (left.type == VAL_NUMERO)
-                return value_create_numero(left.as.numero <= right.as.numero);
+                return value_create_tinuod(left.as.numero <= right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod <= right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod <= right.as.tinuod);
         case GREATER:
             if (left.type == VAL_TIPIK)
-                return value_create_tipik(left.as.tipik > right.as.tipik);
+                return value_create_tinuod(left.as.tipik > right.as.tipik);
             else if (left.type == VAL_NUMERO)
-                return value_create_numero(left.as.numero > right.as.numero);
+                return value_create_tinuod(left.as.numero > right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod > right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod > right.as.tinuod);
         case GREATER_EQUAL:
             if (left.type == VAL_TIPIK)
-                return value_create_tipik(left.as.tipik >= right.as.tipik);
+                return value_create_tinuod(left.as.tipik >= right.as.tipik);
             else if (left.type == VAL_NUMERO)
-                return value_create_numero(left.as.numero >= right.as.numero);
+                return value_create_tinuod(left.as.numero >= right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tipik(left.as.tinuod >= right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod >= right.as.tinuod);
         case UG:
             // other dataytypes might be allowed to be UG but idk
             if (left.type != VAL_TINUOD) {
                 interp_error(node->binary.op->line, "UG operation only works with TINUODs");
             }
-            return value_create_tipik(left.as.tinuod && right.as.tinuod);
+            return value_create_tinuod(left.as.tinuod && right.as.tinuod);
         case O:
-        if (left.type != VAL_TINUOD) {
-            interp_error(node->binary.op->line, "O operation only works with TINUODs");
-        }
-        return value_create_tipik(left.as.tinuod || right.as.tinuod);
+            if (left.type != VAL_TINUOD) {
+                interp_error(node->binary.op->line, "O operation only works with TINUODs");
+            }
+            return value_create_tinuod(left.as.tinuod || right.as.tinuod);
         default:
             break;
         }
