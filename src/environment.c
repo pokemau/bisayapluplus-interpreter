@@ -16,6 +16,7 @@ environment *env_create(environment *parent, arena *arena) {
     self->list = NULL;
     self->parent = parent;
     self->arena = arena;
+    initialize_value_hashmap(arena);
     return self;
 }
 
@@ -77,3 +78,20 @@ bool env_assign(environment *self, const char *name, value val) {
 }
 
 void env_free(environment *self);
+
+value_type env_get_variable_type(environment *self, const char *name) {
+
+    environment *curr = self;
+
+    while (curr) {
+        env_elem *elem = curr->list;
+        while (elem) {
+            if (strcmp(elem->name, name) == 0) {
+                return get_variable_type(elem->value);
+            }
+            elem = elem->next;
+        }
+        curr = curr->parent;
+    }
+    return VAL_NOT_EXIST;
+}

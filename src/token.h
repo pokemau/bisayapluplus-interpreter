@@ -136,9 +136,10 @@ typedef struct token {
     void *literal;
 } token;
 
-void initialize_hashmap(arena* arena);
+void initialize_token_hashmap(arena* arena);
 const char *token_print_type(TokenType t);
 TokenType get_token_type(const char *s);
+char* get_string_from_token_type(TokenType type);
 void print_token(token *t);
 
 #endif

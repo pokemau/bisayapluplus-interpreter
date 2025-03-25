@@ -28,5 +28,6 @@ typedef struct lexer {
 
 lexer lexer_create(lexer_src *source);
 void lexer_gen_tokens(lexer *self);
+void lexer_gen_input_tokens(lexer *self);
 
 #endif

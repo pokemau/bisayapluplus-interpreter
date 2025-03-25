@@ -45,7 +45,7 @@ static bool match(lexer *self, char expected) {
     return true;
 }
 
-static const char *get_token_substring(lexer *self, int start, int end) {
+static char *get_token_substring(lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = arena_alloc(&self->arena, text_len + 1);
     strncpy(text, self->source.data + start, text_len);
@@ -123,6 +123,38 @@ static void scan_char(lexer *self) {
         return;
     }
     lexer_error(self->line, "Unterminated or Invalid Char!");
+}
+
+static void scan_input_string(lexer *self) {
+    while (peek(self) != ',' && !is_at_end(self)){
+        advance(self);
+    }
+    char *text = get_token_substring(self, self->start, self->current);
+
+    // remove trailing spaces
+    int i = strlen(text) - 1;
+    while (i > 0) {
+        if (text[i] == ' ' || text[i] == '\n' || text[i] == '\t')
+            i--;
+        else
+            break;
+    }
+    text[i+1] = '\0';
+
+    // might remove later if the feature of user input TINUOD is not a thing
+    self->start--;
+    printf("Text: %s\n", text);
+    if (strcmp(text, "OO") == 0) {
+        add_token(self, TRUE, NULL);
+    } else if (strcmp(text, "DILI") == 0) {
+        add_token(self, FALSE, NULL);
+    } else if (strlen(text) > 1){
+        lexer_error(self->line, "User input for LETRA variable was given a string!");
+    } else{
+        add_token(self, CHAR, (void*)text);
+    }
+
+    return;
 }
 
 static void scan_comment(lexer *self) {
@@ -229,13 +261,7 @@ static void lexer_scan_token(lexer *self) {
         case '$': add_token(self, DOLLAR, NULL);          break;
         case '#': add_token(self, HASH, NULL);            break;
         case '%': add_token(self, MODULO, NULL);          break;
-        case '+':
-//            if (match(self, '+')) {
-//                add_token(self, INCREMENT, NULL);
-//            } else {
-                add_token(self, PLUS, NULL);
-//            }
-            break;
+        case '+': add_token(self, PLUS, NULL);            break;
         case ';': add_token(self, SEMICOLON, NULL);       break;
         case ':': add_token(self, COLON, NULL);           break;
         case '*': add_token(self, STAR, NULL);            break;
@@ -266,7 +292,7 @@ static void lexer_scan_token(lexer *self) {
                 scan_identifier(self);
             } else {
                 printf("{ %c }\n", c);
-                lexer_error(self->line, "Unexpected character!");
+                lexer_error(self->line, "character!");
             }
             break;
     }
@@ -285,7 +311,7 @@ lexer lexer_create(struct lexer_src *source) {
     self.current = 0;
     self.line = 1;
 
-    initialize_hashmap(&(self.arena));
+    initialize_token_hashmap(&(self.arena));
 
     return self;
 }
@@ -308,5 +334,66 @@ void lexer_gen_tokens(lexer *self) {
         self->start = self->current;
     }
 
+    print_tokens(self);
+}
+
+void lexer_gen_input_tokens(lexer *self) {
+    char c;
+    while (!is_at_end(self)) {
+        c = advance(self);
+        self->start = self->current-1;
+        switch(c) {
+            case ' ':
+            case '\t':
+            case '\r':
+                break;
+            case '\n':
+                if (previous(self) && previous(self)->type != NEWLINE)
+                    add_token(self, NEWLINE, NULL);
+                self->line++;
+                break;
+            case '\0': add_token(self, EOFILE, NULL);         break;
+            case '(': add_token(self, LEFT_PAREN, NULL);      break;
+            case ')': add_token(self, RIGHT_PAREN, NULL);     break;
+            case '{': add_token(self, LEFT_BRACE, NULL);      break;
+            case '}': add_token(self, RIGHT_BRACE, NULL);     break;
+            case '[': add_token(self, LEFT_BRACKET, NULL);    break;
+            case ']': add_token(self, RIGHT_BRACKET, NULL);   break;
+            case ',': add_token(self, COMMA, NULL);           break;
+            case '.': add_token(self, DOT, NULL);             break;
+            case '/': add_token(self, SLASH, NULL);           break;
+            case '&': add_token(self, AMPERSAND, NULL);       break;
+            case '$': add_token(self, DOLLAR, NULL);          break;
+            case '#': add_token(self, HASH, NULL);            break;
+            case '%': add_token(self, MODULO, NULL);          break;
+            case '+': add_token(self, PLUS, NULL);            break;
+            case ';': add_token(self, SEMICOLON, NULL);       break;
+            case ':': add_token(self, COLON, NULL);           break;
+            case '*': add_token(self, STAR, NULL);            break;
+            case '-': scan_comment(self);                     break;
+            case '=':
+                add_token(self, match(self, '=') ? EQUAL_EQUAL: EQUAL, NULL);
+                break;
+            case '>':
+                add_token(self, match(self, '=') ? GREATER_EQUAL : GREATER, NULL);
+                break;
+            case '<':
+                if (match(self, '=')) {
+                    add_token(self, LESS_EQUAL, NULL);
+                } else if (match(self, '>')) {
+                    add_token(self, NOT_EQUAL, NULL);
+                } else {
+                    add_token(self, LESS, NULL);
+                }
+                break;
+
+            default:
+                if (isdigit(c)) {
+                    scan_number(self);
+                } else{
+                    scan_input_string(self);
+                }
+        }
+    }
     print_tokens(self);
 }

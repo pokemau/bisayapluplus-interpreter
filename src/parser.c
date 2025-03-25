@@ -23,7 +23,7 @@ static ast_node *parse_assignment(parser *self);
 static ast_node *parse_block(parser *self);
 
 static ast_node *parse_expression(parser *self);
-static ast_node *parse_binary(parser *self, int precedence);
+static ast_node *parse_binary(parser *self , int precedence);
 static ast_node *parse_unary(parser *self);
 static ast_node *parse_primary(parser *self);
 
@@ -41,6 +41,7 @@ parser parser_create(token_list *tokens, arena *arena) {
     self.arena = arena;
     self.current = 0;
     self.head = &tokens->list[0];
+    self.token_count = tokens->size;
     return self;
 }
 
@@ -288,6 +289,7 @@ static ast_node *parse_print_stmt(parser *self) {
     int expr_count = 0;
 
     while (!match(self, NEWLINE)) {
+        // added STRING datatype here but might not work
         ast_node *expr = parse_expression(self);
         if (!expr) {
             free(exprs);
@@ -711,6 +713,21 @@ static ast_node *parse_primary(parser *self) {
 
     parser_error(self, "Expected expression");
     return NULL;
+}
+
+ast_node **sub_parser_parse(parser* self, size_t expression_count, token* variables) {
+    ast_node **exprs = arena_alloc(self->arena, sizeof(ast_node*) * expression_count);
+    int i = 0;
+    while (i < expression_count) {
+        if (match(self, COMMA)) {
+            advance(self);
+            continue;
+        }
+        ast_node *expression = parse_expression(self);
+        exprs[i] = expression;
+        i++;
+    }
+    return exprs;
 }
 
 ast_node *parser_parse(parser *self) {

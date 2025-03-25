@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define equality(a, b) ((a) > (b) ? 1 : (a) < (b) ? -1 : 0)
 
@@ -27,6 +28,7 @@ static void interp_error(int line, const char *msg) {
 interpreter *interp_create(arena *arena) {
     interpreter *self = arena_alloc(arena, sizeof(interpreter));
     self->env = env_create(NULL, arena);
+    self->arena = arena;
     return self;
 }
 
@@ -72,7 +74,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
             d_type = value_get_d_type(node->var_decl.d_type);
             value val = node->var_decl.inits[i]
                             ? evaluate(self, node->var_decl.inits[i])
-                            : value_create_null();
+                            : value_create_null(d_type);
             if (val.type != VAL_NULL && val.type != d_type) {
                 // TODO: Improve error message
                 // Type NUMERO cant be chuchu with type LETRA
@@ -84,6 +86,8 @@ static void execute_statement(interpreter *self, ast_node *node) {
         break;
 
     case AST_ASSIGNMENT:
+        // TODO by JOROsh: 
+        // check if the datatype is correct with the newly assigned value?
         val = evaluate(self, node->assignment.expr);
         if (!env_assign(self->env, node->assignment.var->lexeme, val)) {
 
@@ -127,6 +131,66 @@ static void execute_statement(interpreter *self, ast_node *node) {
         }
         break;
     case AST_INPUT:
+        // 100 characters limit
+        char *input_string = arena_alloc(self->arena, 100);
+        if (fgets(input_string, 100, stdin) != NULL) {
+            // Remove the trailing newline character, if present
+            size_t len = strlen(input_string);
+            if (len > 0 && input_string[len - 1] == '\n') {
+                input_string[len - 1] = '\0';
+            }
+        }
+        if (strlen(input_string) == 0) {
+            interp_error(node->input.vars[0].line, "User input has a length of zero. Please input properly!");
+        }
+
+        // expecting at least 1 token in an input
+        size_t expression_count = 1;
+
+        int token_start = 0;
+        int string_len = 0;     // iteration counter and records the strings length after the while loop below
+        while (input_string[string_len] != '\0' && expression_count < 10) {
+            if (input_string[string_len] == ',') {
+                token_start = string_len + 1;    // resets the token_start to point at the next lexeme's starting location
+                expression_count++;
+            }
+            string_len++;
+        }
+        // printf("string len: %d\n", string_len);
+        if (node->input.var_count != expression_count) {
+            char error_message[100];
+            sprintf(error_message, "User input count does not match with variable count - inputs: %d - variables: %d", expression_count, node->input.var_count);
+            env_error(node->input.vars[0].line, error_message);
+            break;
+        }
+        lexer sub_lexer = lexer_create(&(lexer_src) {
+            .len = string_len, .data = input_string
+        });
+        lexer_gen_input_tokens(&sub_lexer);
+        parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
+        ast_node **sub_ast_nodes = sub_parser_parse(&sub_parser, expression_count, node->input.vars);
+        value val;
+        for (int i = 0; i < expression_count; i++) {
+            val = evaluate(self, sub_ast_nodes[i]);
+            value_type variable_type = env_get_variable_type(self->env, node->input.vars[i].lexeme);
+            // printf("Variable %s datatype: %s\n", node->input.vars[i].lexeme, get_string_from_value_type(variable_type));
+            if (!(val.type == VAL_LETRA && variable_type == VAL_LETRA) &&
+                !(val.type == VAL_TIPIK && variable_type == VAL_TIPIK) &&
+                !(val.type == VAL_NUMERO && variable_type == VAL_NUMERO) &&
+                !(val.type == VAL_TINUOD && variable_type == VAL_TINUOD)) {
+                    char error_message[100];
+                    sprintf(error_message, "User input datatype does not match with variable datatype - input: %s - variable \'%s\': %s ", 
+                        get_string_from_value_type(val.type),
+                        node->input.vars[i].lexeme,
+                        get_string_from_value_type(variable_type));
+                    env_error(node->input.vars[0].line, error_message);
+                    break;
+            }
+            env_assign(self->env, node->input.vars[i].lexeme, val);
+        }
+
+        // token_list *sub_lexer_tokens = &sub_lexer.tokens;
+    
         break;
 
     case AST_IF:
@@ -180,7 +244,8 @@ static void execute_statement(interpreter *self, ast_node *node) {
 
 static value evaluate(interpreter *self, ast_node *node) {
     if (!node) {
-        return value_create_null();
+        printf("(INTERPRETER: evaluate[1])Created a true null value...\n");
+        return value_create_null(VAL_NULL);
     }
 
     value val, left, right;
@@ -249,78 +314,99 @@ static value evaluate(interpreter *self, ast_node *node) {
             snprintf(buf, 128, "Invalid operand '%c'",
                      left.type == VAL_LETRA ? left.as.letra : right.as.letra);
             interp_error(node->binary.op->line, buf);
-            return value_create_null();
+            return value_create_null(VAL_NULL);
         }
+        value_precedence_convert(&left, &right);
 
         switch (node->binary.op->type) {
         case PLUS:
-            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+            if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik + right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_numero(left.as.numero + right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod + right.as.tinuod);
 
-            return value_create_numero(left.as.numero + right.as.numero);
         case MINUS:
-            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+            if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik - right.as.tipik);
-            return value_create_numero(left.as.numero - right.as.numero);
+            else if (left.type == VAL_NUMERO)
+                return value_create_numero(left.as.numero - right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod - right.as.tinuod);
         case STAR:
-            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+            if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik * right.as.tipik);
-            return value_create_numero(left.as.numero * right.as.numero);
+            else if (left.type == VAL_NUMERO)
+                return value_create_numero(left.as.numero * right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod * right.as.tinuod);
         case MODULO:
-            return value_create_numero(left.as.numero % right.as.numero);
+            if (left.type != VAL_NUMERO)
+                interp_error(node->binary.op->line, "Modulo only works with NUMEROs");
+            return value_create_numero(left.as.numero + right.as.numero);
         case SLASH:
             if (right.as.numero == 0) {
                 interp_error(node->binary.op->line, "Division by zero");
             }
-            if (left.type == VAL_TIPIK && right.type == VAL_TIPIK)
+            if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik / right.as.tipik);
-            return value_create_numero(left.as.numero / right.as.numero);
+            else if (left.type == VAL_NUMERO)
+                return value_create_numero(left.as.numero / right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod / right.as.tinuod);
         case EQUAL_EQUAL:
-            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
-                return value_create_tinuod(
-                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
-                        ==
-                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
-            ));
+            if (left.type == VAL_TIPIK)
+                return value_create_tinuod(left.as.tipik == right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_tinuod(left.as.numero == right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod == right.as.tinuod);
         case NOT_EQUAL:
-            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
-                return value_create_tinuod(
-                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
-                        !=
-                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
-            ));
+            if (left.type == VAL_TIPIK)
+                return value_create_tinuod(left.as.tipik != right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_tinuod(left.as.numero != right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod != right.as.tinuod);
         case LESS:
-            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
-                return value_create_tinuod(
-                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
-                        <
-                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
-            ));
+            if (left.type == VAL_TIPIK)
+                return value_create_tinuod(left.as.tipik < right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_tinuod(left.as.numero < right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod < right.as.tinuod);
         case LESS_EQUAL:
-            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
-                return value_create_tinuod(
-                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
-                        <=
-                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
-            ));
-            return value_create_tinuod(left.as.numero <= right.as.numero);
+            if (left.type == VAL_TIPIK)
+                return value_create_tinuod(left.as.tipik <= right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_tinuod(left.as.numero <= right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod <= right.as.tinuod);
         case GREATER:
-            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
-                return value_create_tinuod(
-                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
-                        >
-                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
-            ));
+            if (left.type == VAL_TIPIK)
+                return value_create_tinuod(left.as.tipik > right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_tinuod(left.as.numero > right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod > right.as.tinuod);
         case GREATER_EQUAL:
-            if (left.type == VAL_TIPIK || right.type == VAL_TIPIK)
-                return value_create_tinuod(
-                    (left.type == VAL_TIPIK ? left.as.tipik : left.as.numero
-                        >=
-                    (right.type == VAL_TIPIK ? right.as.tipik : right.as.numero)
-            ));
+            if (left.type == VAL_TIPIK)
+                return value_create_tinuod(left.as.tipik >= right.as.tipik);
+            else if (left.type == VAL_NUMERO)
+                return value_create_tinuod(left.as.numero >= right.as.numero);
+            else if (left.type == VAL_TINUOD)
+                return value_create_tinuod(left.as.tinuod >= right.as.tinuod);
         case UG:
+            // other dataytypes might be allowed to be UG but idk
+            if (left.type != VAL_TINUOD) {
+                interp_error(node->binary.op->line, "UG operation only works with TINUODs");
+            }
             return value_create_tinuod(left.as.tinuod && right.as.tinuod);
         case O:
+            if (left.type != VAL_TINUOD) {
+                interp_error(node->binary.op->line, "O operation only works with TINUODs");
+            }
             return value_create_tinuod(left.as.tinuod || right.as.tinuod);
         default:
             break;
@@ -330,5 +416,6 @@ static value evaluate(interpreter *self, ast_node *node) {
         break;
     }
 
-    return value_create_null();
+    printf("(INTERPRETER: evaluate[2])Created a true null value...\n");
+    return value_create_null(VAL_NULL);
 }
