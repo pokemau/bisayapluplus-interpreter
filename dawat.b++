@@ -7,11 +7,11 @@ SUGOD
     DAWAT: limit
     IPAKITA: "Write letters: "
     DAWAT: x, isReal, y
-    IPAKITA: "ARA MGA LETRA: " & x & ", " & y & $
-    IPAKITA: "Tinuod ang isReal?: " & isReal & $
     ALANG SA (ctr = 1, ctr < limit, ctr = ctr + 1)
     PUNDOK {
         IPAKITA: ctr & $
     }
+    IPAKITA: "ARA MGA LETRA: " & x & ", " & y & $
+    IPAKITA: "Tinuod ang isReal?: " & isReal & $
 
 KATAPUSAN

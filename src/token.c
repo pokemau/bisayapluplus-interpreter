@@ -29,7 +29,6 @@ void initialize_token_hashmap(arena* arena) {
     hashmap_put_enum(hm_string_to_tokentype, "KUNG_DILI", (size_t)KUNG_DILI);
     hashmap_put_enum(hm_string_to_tokentype, "PUNDOK", (size_t)PUNDOK);
     hashmap_put_enum(hm_string_to_tokentype, "ALANG_SA", (size_t)ALANG_SA);
-    hashmap_put_enum(hm_string_to_tokentype, "UNKOWN", (size_t)UNKNOWN);
 
     // print_hashmap(hm_string_to_tokentype);
 
@@ -40,7 +39,6 @@ void initialize_token_hashmap(arena* arena) {
     hashmap_put_string(hm_tokentype_to_string, (size_t)LETRA, "LETRA");
     hashmap_put_string(hm_tokentype_to_string, (size_t)NUMERO, "NUMERO");
     hashmap_put_string(hm_tokentype_to_string, (size_t)TINUOD, "TINUOD");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)UNKNOWN, "UNKNOWN");
 
     hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_BRACE, "LEFT_BRACE");
     hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_BRACE, "RIGHT_BRACE");

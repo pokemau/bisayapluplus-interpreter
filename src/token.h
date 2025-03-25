@@ -66,7 +66,6 @@ typedef enum TokenType {
 
 //    INCREMENT,
 //    DECREMENT,
-    UNKNOWN,    //temp enum for parser: parse_expression() without any known d_type
 } TokenType;
 
 static const char *token_val[] = {

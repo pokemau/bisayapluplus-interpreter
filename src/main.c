@@ -19,7 +19,7 @@ void run(const char *data, size_t total) {
     s = lexer_create(&(lexer_src) {
         .len = total, .data = data
     });
-    lexer_gen_tokens(&s, false);
+    lexer_gen_tokens(&s);
 
     p = parser_create(&s.tokens, &a);
 

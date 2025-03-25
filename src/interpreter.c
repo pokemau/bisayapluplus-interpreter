@@ -140,9 +140,10 @@ static void execute_statement(interpreter *self, ast_node *node) {
                 input_string[len - 1] = '\0';
             }
         }
+        if (strlen(input_string) == 0) {
+            interp_error(node->input.vars[0].line, "User input has a length of zero. Please input properly!");
+        }
 
-        // allocating 10 char pointers
-        char **lexemes = arena_alloc(self->arena, sizeof(char*) * 10);
         // expecting at least 1 token in an input
         size_t expression_count = 1;
 
@@ -150,7 +151,6 @@ static void execute_statement(interpreter *self, ast_node *node) {
         int string_len = 0;     // iteration counter and records the strings length after the while loop below
         while (input_string[string_len] != '\0' && expression_count < 10) {
             if (input_string[string_len] == ',') {
-                lexemes[expression_count-1] = &input_string[token_start];
                 token_start = string_len + 1;    // resets the token_start to point at the next lexeme's starting location
                 expression_count++;
             }
@@ -166,8 +166,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         lexer sub_lexer = lexer_create(&(lexer_src) {
             .len = string_len, .data = input_string
         });
-        lexer_gen_tokens(&sub_lexer, true);
-        lexer_add_EOF(&sub_lexer);
+        lexer_gen_input_tokens(&sub_lexer);
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
         ast_node **sub_ast_nodes = sub_parser_parse(&sub_parser, expression_count, node->input.vars);
         value val;
@@ -180,8 +179,9 @@ static void execute_statement(interpreter *self, ast_node *node) {
                 !(val.type == VAL_NUMERO && variable_type == VAL_NUMERO) &&
                 !(val.type == VAL_TINUOD && variable_type == VAL_TINUOD)) {
                     char error_message[100];
-                    sprintf(error_message, "User input datatype does not match with variable datatype - input: %s - variable: %s ", 
+                    sprintf(error_message, "User input datatype does not match with variable datatype - input: %s - variable \'%s\': %s ", 
                         get_string_from_value_type(val.type),
+                        node->input.vars[i].lexeme,
                         get_string_from_value_type(variable_type));
                     env_error(node->input.vars[0].line, error_message);
                     break;

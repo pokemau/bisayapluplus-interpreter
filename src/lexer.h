@@ -3,7 +3,6 @@
 
 #include "token.h"
 #include "util/arena.h"
-#include <stdbool.h>
 
 #define INITIAL_TOKEN_CAPACITY 16
 
@@ -28,7 +27,7 @@ typedef struct lexer {
 } lexer;
 
 lexer lexer_create(lexer_src *source);
-void lexer_gen_tokens(lexer *self, const bool is_input);
-void lexer_add_EOF(lexer *self);
+void lexer_gen_tokens(lexer *self);
+void lexer_gen_input_tokens(lexer *self);
 
 #endif
