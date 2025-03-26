@@ -121,8 +121,8 @@ static ast_node *parse_statement(parser *self) {
             advance(self);
         return NULL;
     } else {
-        printf("ELSE::::::::");
-        parser_curr(self);
+        /*printf("ELSE::::::::");*/
+        /*parser_curr(self);*/
         char buf[128];
         snprintf(buf, 128, "Unexpected token '%s' in statement",
                  peek(self)->lexeme);
@@ -130,17 +130,17 @@ static ast_node *parse_statement(parser *self) {
     }
 
     if (!res) {
-        printf("SYNCHRONIZE\n");
+        /*printf("SYNCHRONIZE\n");*/
         synchronize(self);
-        printf("AFTER SYNC:::::::");
-        parser_curr(self);
+        /*printf("AFTER SYNC:::::::");*/
+        /*parser_curr(self);*/
         return NULL;
     }
     return res;
 }
 
 static ast_node *parse_var_decl(parser *self) {
-    printf("=============PARSE VAR DECL=============\n");
+    /*printf("=============PARSE VAR DECL=============\n");*/
     advance(self);
 
     TokenType d_type = advance(self)->type;
@@ -251,7 +251,7 @@ static void parser_curr(parser *self) {
 }
 
 static ast_node *parse_assignment(parser *self) {
-    printf("=============PARSE ASSIGNMENT=============\n");
+    /*printf("=============PARSE ASSIGNMENT=============\n");*/
     token *var_name = advance(self);
     if (!expect(self, EQUAL, "Expected '=' after variable name"))
         return NULL;
@@ -269,7 +269,7 @@ static ast_node *parse_assignment(parser *self) {
         }
     }
 
-    parser_curr(self);
+    /*parser_curr(self);*/
 
     ast_node *assign = ast_new_node(self->arena, AST_ASSIGNMENT);
     assign->assignment.expr = expr;
@@ -279,7 +279,7 @@ static ast_node *parse_assignment(parser *self) {
 }
 
 static ast_node *parse_print_stmt(parser *self) {
-    printf("=============PARSE IPAKITA=============\n");
+    /*printf("=============PARSE IPAKITA=============\n");*/
     advance(self);
     if (!expect(self, COLON, "Expected ':' after 'IPAKITA'"))
         return NULL;
@@ -427,7 +427,7 @@ static ast_node *parse_block(parser *self) {
 }
 
 static ast_node *parse_if_stmt(parser *self) {
-    printf("=============PARSE IF STMT=============\n");
+    /*printf("=============PARSE IF STMT=============\n");*/
 
     advance(self);
 
@@ -473,7 +473,7 @@ static ast_node *parse_if_stmt(parser *self) {
 
 static ast_node *parse_else_stmt(parser *self) {
     if (match(self, KUNG_DILI)) {
-        printf("=============PARSE ELSE IF STMT=============\n");
+        /*printf("=============PARSE ELSE IF STMT=============\n");*/
         advance(self);
         if (!expect(self, LEFT_PAREN, "Expected: '(' after 'KUNG DILI'"))
             return NULL;
@@ -504,7 +504,7 @@ static ast_node *parse_else_stmt(parser *self) {
         return stmt;
 
     } else if (match(self, KUNG_WALA)) {
-        printf("=============PARSE ELSE=============\n");
+        /*printf("=============PARSE ELSE=============\n");*/
         advance(self);
         if (!expect(self, NEWLINE, "Expected 'PUNDOK' in new line"))
             return NULL;
@@ -670,8 +670,8 @@ static ast_node *parse_primary(parser *self) {
                 res->literal.value = peek_prev(self);
                 advance(self);
 
-                printf("AFTER:::::::::");
-                parser_curr(self);
+                /*printf("AFTER:::::::::");*/
+                /*parser_curr(self);*/
                 return res;
             }
             // parser_curr(self);
@@ -701,7 +701,7 @@ static ast_node *parse_primary(parser *self) {
         //        literal->literal.value->line = t->line;
         //        return literal;
     } else if (match(self, DOLLAR)) {
-        printf("DOLLAR\n");
+        /*printf("DOLLAR\n");*/
         advance(self);
         ast_node *literal = ast_new_node(self->arena, AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));

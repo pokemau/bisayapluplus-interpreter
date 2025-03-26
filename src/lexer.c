@@ -69,7 +69,7 @@ static void add_token(lexer *self, TokenType type, void *literal) {
                self->tokens.size * sizeof(token));
         self->tokens.list = new_list;
         self->tokens.max = new_max;
-        printf("Reallocated tokens");
+        /*printf("Reallocated tokens");*/
     }
 
     if (type == STRING || type == TRUE || type == FALSE || type == CHAR)
