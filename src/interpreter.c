@@ -75,7 +75,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
             value val = node->var_decl.inits[i]
                             ? evaluate(self, node->var_decl.inits[i])
                             : value_create_null(d_type);
-            if (val.type != d_type) {
+            if (val.type != VAL_NULL && val.type != d_type) {
                 char buf[128];
                 snprintf(buf, 128, "Type '%s' can't be of type '%s'",
                          get_string_from_value_type(val.type),
