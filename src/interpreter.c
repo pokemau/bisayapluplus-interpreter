@@ -75,12 +75,13 @@ static void execute_statement(interpreter *self, ast_node *node) {
             value val = node->var_decl.inits[i]
                             ? evaluate(self, node->var_decl.inits[i])
                             : value_create_null(d_type);
-            if (val.type != VAL_NULL && val.type != d_type) {
-                // TODO: Improve error message
-                // Type NUMERO cant be chuchu with type LETRA
-                env_error(node->var_decl.names[i].line, "Invalid type");
+            if (val.type != d_type) {
+                char buf[128];
+                snprintf(buf, 128, "Type '%s' can't be of type '%s'",
+                         get_string_from_value_type(val.type),
+                         get_string_from_value_type(d_type));
+                env_error(node->var_decl.names[i].line, buf);
             }
-
             env_define(self->env, node->var_decl.names[i].lexeme, val);
         }
         break;
@@ -343,8 +344,9 @@ static value evaluate(interpreter *self, ast_node *node) {
                 return value_create_tinuod(left.as.tinuod * right.as.tinuod);
         case MODULO:
             if (left.type != VAL_NUMERO)
-                interp_error(node->binary.op->line, "Modulo only works with NUMEROs");
-            return value_create_numero(left.as.numero + right.as.numero);
+                interp_error(node->binary.op->line,
+                             "Modulo only works with type 'NUMERO'");
+            return value_create_numero(left.as.numero % right.as.numero);
         case SLASH:
             if (right.as.numero == 0) {
                 interp_error(node->binary.op->line, "Division by zero");
@@ -389,7 +391,7 @@ static value evaluate(interpreter *self, ast_node *node) {
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero > right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tinuod(left.as.tinuod > right.as.tinuod);
+                return value_create_tinuod(left.as.tinuod > right.as.tinuod); 
         case GREATER_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik >= right.as.tipik);
