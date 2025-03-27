@@ -3,6 +3,7 @@
 
 #include "token.h"
 #include "util/arena.h"
+#include "util/error.h"
 
 #define INITIAL_TOKEN_CAPACITY 16
 
@@ -24,6 +25,7 @@ typedef struct lexer {
     int current;
     int line;
     arena arena;
+    error_list error_list;
 } lexer;
 
 lexer lexer_create(lexer_src *source);

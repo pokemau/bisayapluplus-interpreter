@@ -20,6 +20,11 @@ void run(const char *data, size_t total) {
         .len = total, .data = data
     });
     lexer_gen_tokens(&s);
+    if (s.error_list.error_count > 0) {
+        print_all_errors(&s.error_list);
+        arena_free(&a);
+        return;
+    }
 
     p = parser_create(&s.tokens, &a);
 

@@ -160,7 +160,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         // printf("string len: %d\n", string_len);
         if (node->input.var_count != expression_count) {
             char error_message[100];
-            sprintf(error_message, "User input count does not match with variable count - inputs: %d - variables: %d", expression_count, node->input.var_count);
+            sprintf(error_message, "User input count does not match with variable count - inputs: %d - variables: %d", (int)expression_count, node->input.var_count);
             env_error(node->input.vars[0].line, error_message);
             break;
         }
@@ -168,6 +168,9 @@ static void execute_statement(interpreter *self, ast_node *node) {
             .len = string_len, .data = input_string
         });
         lexer_gen_input_tokens(&sub_lexer);
+        if (sub_lexer.error_list.error_count > 0) {
+            return; //return 1
+        }
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
         ast_node **sub_ast_nodes = sub_parser_parse(&sub_parser, expression_count, node->input.vars);
         value val;
@@ -198,8 +201,9 @@ static void execute_statement(interpreter *self, ast_node *node) {
     case AST_ELSE_IF:
         val = evaluate(self, node->if_stmt.condition);
         if (val.type != VAL_TINUOD)
-            bpp_error(node->if_stmt.condition->binary.op->line,
-                      "Condition must be boolean");
+            fprintf(stderr, "Line: [%d], ERROR: %s\n", 
+                node->if_stmt.condition->binary.op->line,
+                "Condition must be boolean"); //ERROR
         if (val.as.tinuod) {
             if (node->if_stmt.then_block)
                 execute_statement(self, node->if_stmt.then_block);
