@@ -1,11 +1,10 @@
 #include "parser.h"
 #include <stdio.h>
-#include <string.h>
 
 // Helper function to print indentation
 static void print_indent(int depth) {
     for (int i = 0; i < depth; i++) {
-        printf("  "); // Two spaces per depth level
+        printf("  ");
     }
 }
 
@@ -51,7 +50,7 @@ void ast_print(ast_node *node, int depth) {
             printf("Name: %s", node->var_decl.names[i].lexeme);
             if (node->var_decl.inits[i]) {
                 printf(" = ");
-                ast_print(node->var_decl.inits[i], 0); // Inline expression
+                ast_print(node->var_decl.inits[i], 0);
             } else {
                 printf("\n");
             }
@@ -117,7 +116,6 @@ void ast_print(ast_node *node, int depth) {
         print_indent(depth + 1);
         printf("Then:\n");
         ast_print(node->if_stmt.then_block, depth + 2);
-        // No condition or else_block for AST_ELSE
         break;
 
     case AST_FOR:
@@ -162,7 +160,7 @@ void ast_print(ast_node *node, int depth) {
 
     case AST_LITERAL:
         printf("[LITERAL] (type: %s, value: %s)\n",
-               token_val[node->literal.value->type], // Assumes token_val array exists
+               token_val[node->literal.value->type],
                node->literal.value->lexeme);
         break;
 
