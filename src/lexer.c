@@ -9,9 +9,9 @@
 #include <ctype.h>
 
 
-static void lexer_error(lexer *self, char *msg) {
+static void lexer_error(lexer *self, const char *msg) {
     // fprintf(stderr, "Lexical Error at Line [%d]: %s\n", line, msg);
-    add_error(&self->error_list, LEXICAL_ERROR, self->line, msg);
+    add_error(self->error_list, LEXICAL_ERROR, self->line, msg);
 }
 static bool is_alpha(const char c) {
     return isalpha(c) || c == '_';
@@ -87,11 +87,11 @@ static void add_token(lexer *self, TokenType type, void *literal) {
 }
 
 static void scan_string(lexer *self) {
-    while(peek(self) != '"' && !is_at_end(self) && peek(self) != '\n') {
+    while(peek(self) != '"' && !is_at_end(self) && peek_next(self) != '\n') {
         advance(self);
     }
 
-    if (peek(self) == '\n' || is_at_end(self)) {
+    if (peek_next(self) == '\n' || is_at_end(self)) {
         lexer_error(self, "Unterminated String!");
     }
 

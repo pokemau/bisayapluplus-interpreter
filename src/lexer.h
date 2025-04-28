@@ -25,7 +25,7 @@ typedef struct lexer {
     int current;
     int line;
     arena arena;
-    error_list error_list;
+    error_list *error_list;
 } lexer;
 
 lexer lexer_create(lexer_src *source);

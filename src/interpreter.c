@@ -168,7 +168,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
             .len = string_len, .data = input_string
         });
         lexer_gen_input_tokens(&sub_lexer);
-        if (sub_lexer.error_list.error_count > 0) {
+        if (sub_lexer.error_list->error_count > 0) {
             return; //return 1
         }
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);

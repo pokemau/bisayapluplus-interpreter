@@ -42,13 +42,15 @@ parser parser_create(token_list *tokens, arena *arena) {
     self.current = 0;
     self.head = &tokens->list[0];
     self.token_count = tokens->size;
+    self.error_list = create_error_list(arena);
     return self;
 }
 
 static void parser_error(parser *self, const char *message) {
     token *current = &self->tokens->list[self->current];
-    fprintf(stderr, "Syntax Error at line %d: %s\n", current->line, message);
+    // fprintf(stderr, "Syntax Error at line %d: %s\n", current->line, message);
     //    exit(1);
+    add_error(self->error_list, SYNTAX_ERROR, current->line, message);
 }
 
 static bool is_at_end(parser *self) { return peek(self)->type == EOFILE; }
@@ -104,6 +106,8 @@ static ast_node *parse_statement(parser *self) {
 
     ast_node *res = NULL;
 
+    printf("Statement start: %s\n", peek(self)->lexeme);
+
     if (match(self, MUGNA)) {
         res = parse_var_decl(self);
     } else if (match(self, IPAKITA)) {
@@ -129,6 +133,8 @@ static ast_node *parse_statement(parser *self) {
         parser_error(self, buf);
     }
 
+    printf("Statement ends: %s\n", peek(self)->lexeme);
+
     if (!res) {
         /*printf("SYNCHRONIZE\n");*/
         synchronize(self);
@@ -142,13 +148,16 @@ static ast_node *parse_statement(parser *self) {
 static ast_node *parse_var_decl(parser *self) {
     /*printf("=============PARSE VAR DECL=============\n");*/
     advance(self);
+    token* datatype = advance(self);
+    const char* decl_datatype = datatype->lexeme;
 
-    TokenType d_type = advance(self)->type;
-    if (d_type != NUMERO && d_type != LETRA && d_type != TINUOD &&
-        d_type != TIPIK) {
-        parser_error(self, "Expected data type after 'MUGNA'");
+    // Now looking (peeking) at token after "MUGNA"
+    if (strcmp(decl_datatype, "NUMERO") != 0 && strcmp(decl_datatype, "LETRA") != 0 && 
+        strcmp(decl_datatype, "TINUOD") != 0 && strcmp(decl_datatype, "TIPIK") != 0) {
+        parser_error(self, "Expected data type after 'MUGNA' during variable declaration");
         return NULL;
     }
+    TokenType d_type = datatype->type;
 
     // TODO: implement allocator functions
     int temp_size = 10;
@@ -159,9 +168,10 @@ static ast_node *parse_var_decl(parser *self) {
     while (!match(self, NEWLINE)) {
         token *name = advance(self);
         if (!name || name->type != IDENTIFIER) {
-            parser_error(self, "Expected: variable name");
-            free(names);
-            free(inits);
+            parser_error(self, "Expected variable name after data type during variable declaration");
+            // Commented these below because these causes the program to crash
+            // free(names);
+            // free(inits);
             return NULL;
         }
 
@@ -172,8 +182,10 @@ static ast_node *parse_var_decl(parser *self) {
             advance(self);
             init = parse_expression(self);
             if (!init) {
-                free(names);
-                free(inits);
+                parser_error(self, "Expected expression after '='");
+                // Commented these below because these causes the program to crash
+                // free(names);
+                // free(inits);
                 return NULL;
             }
         }
@@ -195,9 +207,10 @@ static ast_node *parse_var_decl(parser *self) {
 
         if (match(self, COMMA)) {
             if (peek_next(self)->type != IDENTIFIER) {
-                parser_error(self, "Expected: Variable name after ','");
-                free(names);
-                free(inits);
+                parser_error(self, "Expected a variable name after ','");
+                // Commented these below because these causes the program to crash
+                // free(names);
+                // free(inits);
                 return NULL;
             }
             advance(self);
@@ -221,13 +234,21 @@ static ast_node *parse_var_decl(parser *self) {
     return decl;
 }
 
+// if something breaks, my changes might be the cause
+// comment the ones with comments in case
+// why changed: when writing a line that starts with unfamiliar token, the program skips it and finds the next line that starts with a familiar token
 static void synchronize(parser *self) {
+    if (peek(self)->type == NEWLINE) {  //
+        advance(self);                  //
+        return;                         //
+    }                                   //      
+
     if (peek_next(self))
         advance(self);
     else
         return;
 
-    while (!is_at_end(self)) {
+    while (!is_at_end(self) && peek_prev(self)->type != NEWLINE) {          // remove 2nd condition
         token *curr = peek(self);
         switch (curr->type) {
             // case RIGHT_BRACE:
@@ -318,12 +339,13 @@ static ast_node *parse_print_stmt(parser *self) {
 
     if (peek_prev(self)->type == AMPERSAND) {
         parser_error(self, "Expected expression after '&'");
-        free(exprs);
+        // free(exprs);
         return NULL;
     }
 
     if (!expect(self, NEWLINE, "Expected: Statement in new line")) {
-        free(exprs);
+        // free(exprs);
+        advance(self);
         return NULL;
     }
 
@@ -711,7 +733,8 @@ static ast_node *parse_primary(parser *self) {
         return literal;
     }
 
-    parser_error(self, "Expected expression");
+    // Commented this because the error message might be on the var_decl function
+    // parser_error(self, "Expected expression");
     return NULL;
 }
 

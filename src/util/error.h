@@ -14,7 +14,7 @@ typedef enum ErrorType{
 typedef struct {
     ErrorType type;
     int line;
-    char *message;
+    const char *message;
 } error;
 
 typedef struct {
@@ -24,8 +24,8 @@ typedef struct {
     size_t max_count;
 } error_list;
 
-error_list create_error_list(arena* arena);
-void add_error(error_list* self, ErrorType type, int line, char* message);
+error_list* create_error_list(arena* arena);
+void add_error(error_list* self, ErrorType type, int line, const char* message);
 void print_all_errors(error_list* self);
 
 #endif

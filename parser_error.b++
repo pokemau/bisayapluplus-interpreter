@@ -1,0 +1,12 @@
+SUGOD
+    MUGNA x = 10
+    MUGNA NUMERO = 20
+    MUGNA NUMERO y = 5,
+    MUGNA NUMERO z =
+    IPAKITA: "X is: " &
+    PANGKSYUN YEAH x = 10
+    ALANG SA (ctr = 10, ctr > 0, ctr = ctr - 1)
+    PUNDOK {
+        IPAKITA: ctr & $
+
+KATAPUSAN
