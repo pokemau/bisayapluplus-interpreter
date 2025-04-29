@@ -217,7 +217,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         break;
     case AST_BLOCK:
         for (int i = 0; i < node->block.stmt_count; i++) {
-            execute_statement(self, &node->block.statements[i]);
+            execute_statement(self, node->block.statements[i]);
         }
         break;
     case AST_FOR:

@@ -74,7 +74,7 @@ struct ast_node {
         } for_stmt;
 
         struct {
-            ast_node *statements;
+            ast_node **statements;
             int stmt_count;
         } block;
 

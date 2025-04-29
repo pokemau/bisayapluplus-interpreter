@@ -77,7 +77,7 @@ void ast_free_node(ast_node *node) {
         break;
     case AST_BLOCK:
         for (int i = 0; i < node->block.stmt_count; i++) {
-            ast_free_node(&node->block.statements[i]);
+            ast_free_node(node->block.statements[i]);
         }
         free(node->block.statements);
         break;

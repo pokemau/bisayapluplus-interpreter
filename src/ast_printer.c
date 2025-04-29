@@ -137,7 +137,7 @@ void ast_print(ast_node *node, int depth) {
     case AST_BLOCK:
         printf("[BLOCK] (stmt_count: %d)\n", node->block.stmt_count);
         for (int i = 0; i < node->block.stmt_count; i++) {
-            ast_print(&node->block.statements[i], depth + 1);
+            ast_print(node->block.statements[i], depth + 1);
         }
         break;
 

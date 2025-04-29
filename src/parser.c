@@ -106,7 +106,7 @@ static ast_node *parse_statement(parser *self) {
 
     ast_node *res = NULL;
 
-    printf("Statement start: %s\n", peek(self)->lexeme);
+    // printf("Statement start: %s\n", peek(self)->lexeme);
 
     if (match(self, MUGNA)) {
         res = parse_var_decl(self);
@@ -133,7 +133,7 @@ static ast_node *parse_statement(parser *self) {
         parser_error(self, buf);
     }
 
-    printf("Statement ends: %s\n", peek(self)->lexeme);
+    // printf("Statement ends: %s\n", peek(self)->lexeme);
 
     if (!res) {
         /*printf("SYNCHRONIZE\n");*/
@@ -274,20 +274,59 @@ static void parser_curr(parser *self) {
 static ast_node *parse_assignment(parser *self) {
     /*printf("=============PARSE ASSIGNMENT=============\n");*/
     token *var_name = advance(self);
-    if (!expect(self, EQUAL, "Expected '=' after variable name"))
-        return NULL;
+
     ast_node *expr = NULL;
 
-    if (match(self, IDENTIFIER) && peek_next(self)->type == EQUAL) {
-        expr = parse_assignment(self);
-        if (!expr) {
-            return NULL;
+    if (peek(self)->type == PLUS || peek(self)->type == MINUS) {
+        token *signToken = advance(self);
+        ast_node *left = ast_new_node(self->arena, AST_VARIABLE);
+        left->variable.name = var_name;
+        printf("Current token: %s\n", peek(self)->lexeme);
+        ast_node *right;
+
+        if (match(self, EQUAL)) { // i+=1, i-=1
+            advance(self);
+            right = parse_expression(self);
+            if (!right) {
+                char buf[128];
+                sprintf(buf, "Expected expression after '%s %s='", var_name->lexeme, signToken->lexeme);
+                parser_error(self, buf);
+                return NULL;
+            }
         }
-    } else {
+        else if (match(self, PLUS) || match(self, MINUS)) { // i++, i--
+            if (!(signToken->type == PLUS && match(self, PLUS)) &&
+                !(signToken->type == MINUS && match(self, MINUS))) {
+                    char buf[128];
+                    sprintf(buf, "Unexpected '-+' or '+-' after '%s'", var_name->lexeme);
+                    parser_error(self, buf);
+                    return NULL;
+            }
+            right = ast_new_node(self->arena, AST_LITERAL);
+
+            token *literal_token = arena_alloc(self->arena, sizeof(token));
+            literal_token->line = self->head->line;
+            literal_token->lexeme = "1";
+            literal_token->type = NUMBER;
+            literal_token->literal = (void *)1;
+
+            right->literal.value = literal_token;
+            advance(self);
+        }
+
+        ast_node *binary = ast_new_node(self->arena, AST_BINARY);
+        binary->binary.op = signToken;
+        binary->binary.left = left;
+        binary->binary.right = right;
+        expr = binary;
+    } else if (expect(self, EQUAL, "Expected '=' after variable name")) {
         expr = parse_expression(self);
-        if (!expr) {
-            return NULL;
-        }
+    } else {
+        return NULL;
+    }
+
+    if (!expr) {
+        return NULL;
     }
 
     /*parser_curr(self);*/
@@ -296,6 +335,7 @@ static ast_node *parse_assignment(parser *self) {
     assign->assignment.expr = expr;
     assign->assignment.var = var_name;
 
+    // printf("Value: %s\n", assign->assignment.expr->binary.right->literal.value->lexeme);
     return assign;
 }
 
@@ -422,7 +462,7 @@ static ast_node *parse_block(parser *self) {
         if (stmt_count >= temp_size) {
             temp_size += 10;
             ast_node **new_stmts = arena_alloc(self->arena,
-                                               sizeof(ast_node *));
+                                               sizeof(ast_node *) * temp_size);
             memcpy(new_stmts, stmts, sizeof(ast_node *) * stmt_count);
             stmts = new_stmts;
         }
@@ -438,11 +478,15 @@ static ast_node *parse_block(parser *self) {
     }
 
     advance(self);
-    expect(self, NEWLINE, "Expected: Statement in new line");
+    expect(self, NEWLINE, "Expected: Next statement in new line");
 
     ast_node *block = ast_new_node(self->arena, AST_BLOCK);
     if (stmts) {
-        block->block.statements = *stmts;
+        block->block.statements = arena_alloc(self->arena, sizeof(ast_node *) * stmt_count);
+        for (int i = 0; i < stmt_count; i++) {
+            block->block.statements[i] = stmts[i];
+        }
+        // block->block.statements = *stmts;
     }
     block->block.stmt_count = stmt_count;
     return block;
