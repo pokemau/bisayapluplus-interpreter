@@ -74,7 +74,6 @@ void run_file(const char *file_name) {
     run(data, total);
 
     fclose(f);
-
     free(data);
 }
 

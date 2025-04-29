@@ -1,5 +1,4 @@
 #include "value.h"
-#include "ast.h"
 #include "token.h"
 #include "util/hashmap.h"
 
