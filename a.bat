@@ -1,4 +1,4 @@
 cmake -S . -B build
 cmake --build build
 
-.\build\bisaya++ error.b++
+.\build\bisaya++ test\parser_error.b++

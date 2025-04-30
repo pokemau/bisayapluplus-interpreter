@@ -90,7 +90,7 @@ static void scan_string(lexer *self) {
         advance(self);
     }
 
-    if (peek_next(self) == '\n' || is_at_end(self)) {
+    if ((peek(self) != '"' && peek_next(self) == '\n') || is_at_end(self)) {
         lexer_error(self, "Unterminated String!");
     }
 

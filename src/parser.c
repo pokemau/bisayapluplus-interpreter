@@ -308,7 +308,8 @@ static ast_node *parse_assignment(parser *self) {
             literal_token->line = self->head->line;
             literal_token->lexeme = "1";
             literal_token->type = NUMBER;
-            literal_token->literal = (void *)1;
+            literal_token->literal = arena_alloc(self->arena, sizeof(double));
+            *(double *)literal_token->literal = 1.0;
 
             right->literal.value = literal_token;
             advance(self);
@@ -731,7 +732,8 @@ static ast_node *parse_primary(parser *self) {
         advance(self);
 
         while (!match(self, NEWLINE)) {
-            if (match(self, RIGHT_BRACKET)) {
+            if (match(self, RIGHT_BRACKET) && 
+                (peek_next(self)->type == NEWLINE || peek_next(self)->type == AMPERSAND) || peek_next(self)->type == EOFILE) {
                 ast_node *res = ast_new_node(self->arena, AST_LITERAL);
                 res->literal.value = peek_prev(self);
                 advance(self);
