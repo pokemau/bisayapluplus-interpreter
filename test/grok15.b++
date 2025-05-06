@@ -1,0 +1,7 @@
+SUGOD
+MUGNA NUMERO n=10
+MUGNA LETRA c='a'
+MUGNA TINUOD b="OO"
+MUGNA TIPIK f=3.14
+IPAKITA: "Num: " & n & ", Char: " & c & ", Bool: " & b & ", Float: " & f
+KATAPUSAN

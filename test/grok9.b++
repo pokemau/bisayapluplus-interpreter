@@ -1,0 +1,4 @@
+SUGOD
+MUGNA NUMERO Var1=10, var1=20, _abc=5
+IPAKITA: Var1 & " " & var1 & " " & _abc
+KATAPUSAN
