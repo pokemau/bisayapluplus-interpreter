@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 void env_error(int line, const char *msg) {
-    fprintf(stderr, "Line [%d]: %s\n", line, msg);
+    fprintf(stderr, "Semantic Error at Line [%d]: %s\n", line, msg);
     exit(1);
 }
 

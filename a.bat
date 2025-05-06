@@ -1,4 +1,4 @@
 cmake -S . -B build
 cmake --build build
 
-.\build\bisaya++ test\parser_error.b++
+.\build\bisaya++ test/interp_error.b++

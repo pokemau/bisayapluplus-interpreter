@@ -142,7 +142,6 @@ static void scan_input_string(lexer *self) {
 
     // might remove later if the feature of user input TINUOD is not a thing
     self->start--;
-    printf("Text: %s\n", text);
     if (strcmp(text, "OO") == 0) {
         add_token(self, TRUE, NULL);
     } else if (strcmp(text, "DILI") == 0) {
@@ -216,6 +215,7 @@ static void scan_identifier(lexer *self) {
             advance(self);
             add_token(self, KUNG_WALA, NULL);
         } else {
+            self->current--;
             add_token(self, KUNG, NULL);
         }
         return;
@@ -333,7 +333,7 @@ void lexer_gen_tokens(lexer *self) {
         self->start = self->current;
     }
 
-    // print_tokens(self);
+    print_tokens(self);
 }
 
 void lexer_gen_input_tokens(lexer *self) {
