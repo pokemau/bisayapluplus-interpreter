@@ -303,7 +303,7 @@ lexer lexer_create(struct lexer_src *source) {
     self.arena = arena_create(INITIAL_ARENA_SIZE);
     self.tokens.size = 0;
     self.tokens.max = INITIAL_TOKEN_CAPACITY;
-    self.tokens.list = arena_alloc(&self->arena,
+    self.tokens.list = arena_alloc(&self.arena,
                                    sizeof(token) * self.tokens.max);
 
     self.start = 0;
