@@ -275,6 +275,46 @@ static void execute_statement(interpreter *self, ast_node *node) {
         }
         break;
 
+    case AST_SWITCH: {
+        value switch_val = evaluate(self, node->switch_stmt.expression);
+        bool case_executed = false;
+        for (int i = 0; i < node->switch_stmt.case_count; i++) {
+            ast_node *case_node = node->switch_stmt.cases[i];
+            value case_val = evaluate(self, case_node->case_stmt.value);
+
+            // Perform type-aware comparison
+            bool match = false;
+            if (switch_val.type == case_val.type) {
+                switch (switch_val.type) {
+                    case VAL_NUMERO:
+                        match = (switch_val.as.numero == case_val.as.numero);
+                        break;
+                    case VAL_LETRA:
+                        match = (switch_val.as.letra == case_val.as.letra);
+                        break;
+                    case VAL_TIPIK:
+                        // Floating point comparison needs care, but direct equality for now
+                        match = (switch_val.as.tipik == case_val.as.tipik);
+                        break;
+                    case VAL_TINUOD:
+                        match = (switch_val.as.tinuod == case_val.as.tinuod);
+                        break;
+                    default:
+                        // Potentially handle other types or error
+                        break;
+                }
+            }
+
+            if (match) {
+                execute_statement(self, case_node->case_stmt.block);
+                case_executed = true;
+                break; // Exit switch after first match (like C switch)
+            }
+        }
+        // Optional: Add default case handling here if your language supports it
+        // if (!case_executed && node->switch_stmt.default_case) { ... }
+    } break;
+
     default:
         break;
     }

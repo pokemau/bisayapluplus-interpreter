@@ -15,6 +15,8 @@ typedef enum ast_node_type {
     AST_ELSE,       // KUNG WALA
     AST_FOR,        // ALAG SA
     AST_BLOCK,      // PUNDOK
+    AST_SWITCH,     // PULI statements
+    AST_CASE,       // KASO blocks
     AST_BINARY,     // Binary operations (+, -, /, *)
     AST_UNARY,      // Unary operatins (+, -)
     AST_LITERAL,    // Literals (NUMERO, LETRA, TINUOD, PITIK)
@@ -72,6 +74,17 @@ struct ast_node {
             ast_node *update;
             ast_node *body;
         } for_stmt;
+
+        struct {
+            ast_node *expression; // The VAR in PULI(VAR)
+            ast_node **cases;     // Array of AST_CASE nodes
+            int case_count;
+        } switch_stmt;
+
+        struct {
+            ast_node *value;      // The value in KASO {value}
+            ast_node *block;      // The PUNDOK block to execute
+        } case_stmt;
 
         struct {
             ast_node **statements;
