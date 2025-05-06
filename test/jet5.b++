@@ -1,0 +1,7 @@
+SUGOD
+  MUGNA NUMERO a=5
+  KUNG (a == 5)
+  PUNDOK {
+    IPAKITA: "YES"
+  }
+KATAPUSAN

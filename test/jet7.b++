@@ -1,0 +1,7 @@
+SUGOD
+  MUGNA NUMERO i = 0
+  ALANG SA (i = 1, i <= 3, i++)
+  PUNDOK {
+    IPAKITA: i
+  }
+KATAPUSAN
