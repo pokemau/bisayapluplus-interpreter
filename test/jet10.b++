@@ -1,0 +1,4 @@
+SUGOD
+MUGNA NUMERO m=10, n=20
+IPAKITA: m < n & $ & m > n & $ & m == n & $ & m <> n
+KATAPUSAN
