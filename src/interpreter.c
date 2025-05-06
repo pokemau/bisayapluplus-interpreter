@@ -202,10 +202,15 @@ static void execute_statement(interpreter *self, ast_node *node) {
         });
         lexer_gen_input_tokens(&sub_lexer);
         if (sub_lexer.error_list->error_count > 0) {
-            return; //return 1
+            interp_error(node->input.vars[0].line, sub_lexer.error_list->errors[0].message);
+            return;
         }
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
         ast_node **sub_ast_nodes = sub_parser_parse(&sub_parser, expression_count, node->input.vars);
+        if (sub_parser.error_list->error_count > 0) {
+            interp_error(node->input.vars[0].line, sub_parser.error_list->errors[0].message);
+            return;
+        }
         value val;
         for (int i = 0; i < expression_count; i++) {
             val = evaluate(self, sub_ast_nodes[i]);
@@ -274,45 +279,36 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
         }
         break;
-
     case AST_SWITCH: {
-        value switch_val = evaluate(self, node->switch_stmt.expression);
-        bool case_executed = false;
+        // evaluate switch expression
+        value sel = evaluate(self, node->switch_stmt.expr);
+        // iterate cases
         for (int i = 0; i < node->switch_stmt.case_count; i++) {
-            ast_node *case_node = node->switch_stmt.cases[i];
-            value case_val = evaluate(self, case_node->case_stmt.value);
-
-            // Perform type-aware comparison
-            bool match = false;
-            if (switch_val.type == case_val.type) {
-                switch (switch_val.type) {
-                    case VAL_NUMERO:
-                        match = (switch_val.as.numero == case_val.as.numero);
-                        break;
-                    case VAL_LETRA:
-                        match = (switch_val.as.letra == case_val.as.letra);
-                        break;
-                    case VAL_TIPIK:
-                        // Floating point comparison needs care, but direct equality for now
-                        match = (switch_val.as.tipik == case_val.as.tipik);
-                        break;
-                    case VAL_TINUOD:
-                        match = (switch_val.as.tinuod == case_val.as.tinuod);
-                        break;
-                    default:
-                        // Potentially handle other types or error
-                        break;
+            value cv = evaluate(self, node->switch_stmt.case_values[i]);
+            bool match_case = false;
+            if (sel.type == cv.type) {
+                switch (sel.type) {
+                case VAL_NUMERO:
+                    match_case = (sel.as.numero == cv.as.numero);
+                    break;
+                case VAL_TIPIK:
+                    match_case = (sel.as.tipik == cv.as.tipik);
+                    break;
+                case VAL_LETRA:
+                    match_case = (sel.as.letra == cv.as.letra);
+                    break;
+                case VAL_TINUOD:
+                    match_case = (sel.as.tinuod == cv.as.tinuod);
+                    break;
+                default:
+                    break;
                 }
             }
-
-            if (match) {
-                execute_statement(self, case_node->case_stmt.block);
-                case_executed = true;
-                break; // Exit switch after first match (like C switch)
+            if (match_case) {
+                execute_statement(self, node->switch_stmt.case_blocks[i]);
+                break;
             }
         }
-        // Optional: Add default case handling here if your language supports it
-        // if (!case_executed && node->switch_stmt.default_case) { ... }
     } break;
 
     default:
@@ -391,19 +387,14 @@ static value evaluate(interpreter *self, ast_node *node) {
         left = evaluate(self, node->binary.left);
         right = evaluate(self, node->binary.right);
 
-        if (left.type == VAL_LETRA || right.type == VAL_LETRA) {
-            char buf[128];
-            snprintf(buf, 128, "Invalid operand '%c'",
-                     left.type == VAL_LETRA ? left.as.letra : right.as.letra);
-            interp_error(node->binary.op->line, buf);
-            return value_create_null(VAL_NULL);
-        }
         value_precedence_convert(&left, &right);
 
         switch (node->binary.op->type) {
         case PLUS:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik + right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_letra(left.as.letra + right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero + right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -412,6 +403,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case MINUS:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik - right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_letra(left.as.letra - right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero - right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -419,6 +412,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case STAR:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik * right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_letra(left.as.letra * right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero * right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -430,11 +425,15 @@ static value evaluate(interpreter *self, ast_node *node) {
             return value_create_numero(left.as.numero % right.as.numero);
         case SLASH:
             if ((right.type == VAL_NUMERO && right.as.numero == 0) ||
-                (right.type == VAL_TIPIK && right.as.tipik == 0)) {
+                (right.type == VAL_LETRA && right.as.letra == 0) ||
+                (right.type == VAL_TIPIK && right.as.tipik == 0) ||
+                (right.type == VAL_TINUOD && right.as.tinuod == false)) {
                 interp_error(node->binary.op->line, "Division by zero");
             }
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik / right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_letra(left.as.letra / right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero / right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -442,6 +441,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case EQUAL_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik == right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_tinuod(left.as.letra == right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero == right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -449,6 +450,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case NOT_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik != right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_tinuod(left.as.letra != right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero != right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -456,6 +459,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case LESS:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik < right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_tinuod(left.as.letra < right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero < right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -463,6 +468,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case LESS_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik <= right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_tinuod(left.as.letra <= right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero <= right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -470,6 +477,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case GREATER:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik > right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_tinuod(left.as.letra > right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero > right.as.numero);
             else if (left.type == VAL_TINUOD)
@@ -477,6 +486,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case GREATER_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik >= right.as.tipik);
+            else if(left.type == VAL_LETRA)
+                return value_create_tinuod(left.as.letra >= right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero >= right.as.numero);
             else if (left.type == VAL_TINUOD)

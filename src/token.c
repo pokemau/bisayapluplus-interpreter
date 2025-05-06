@@ -99,31 +99,7 @@ void print_token(token *t) {
 }
 
 TokenType get_token_type(const char *s) {
-    // Keywords
-    if (strcmp(s, "SUGOD") == 0) return SUGOD;
-    if (strcmp(s, "KATAPUSAN") == 0) return KATAPUSAN;
-    if (strcmp(s, "MUGNA") == 0) return MUGNA;
-    if (strcmp(s, "IPAKITA") == 0) return IPAKITA;
-    if (strcmp(s, "DAWAT") == 0) return DAWAT;
-    if (strcmp(s, "KUNG") == 0) return KUNG;
-    if (strcmp(s, "KUNG_DILI") == 0 || strcmp(s, "KUNGDILI") == 0) return KUNG_DILI; // Allow with or without underscore
-    if (strcmp(s, "KUNG_WALA") == 0 || strcmp(s, "KUNGWALA") == 0) return KUNG_WALA; // Allow with or without underscore
-    if (strcmp(s, "PUNDOK") == 0) return PUNDOK;
-    if (strcmp(s, "ALANG_SA") == 0 || strcmp(s, "ALANGSA") == 0) return ALANG_SA; // Allow with or without underscore
-    if (strcmp(s, "PULI") == 0) return PULI;
-    if (strcmp(s, "KASO") == 0) return KASO;
-    // Data types
-    if (strcmp(s, "NUMERO") == 0) return NUMERO;
-    if (strcmp(s, "LETRA") == 0) return LETRA;
-    if (strcmp(s, "TIPIK") == 0) return TIPIK;
-    if (strcmp(s, "TINUOD") == 0) return TINUOD;
-    // Boolean literals
-    if (strcmp(s, "OO") == 0) return TRUE; // Bisaya for TRUE
-    if (strcmp(s, "DILI") == 0 && strlen(s) == 4) return FALSE; // Bisaya for FALSE/NO (ensure it's not part of KUNG_DILI)
-                                                              // DILI is also a logical NOT operator, lexer handles that by context if needed or parser disambiguates
-                                                              // For simple keyword mapping, this is okay.
-    // Default identifier
-    return IDENTIFIER;
+    return (TokenType)hashmap_get_enum(hm_string_to_tokentype, s);
 }
 
 char* get_string_from_token_type(TokenType type) {

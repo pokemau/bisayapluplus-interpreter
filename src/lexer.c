@@ -47,14 +47,14 @@ static bool match(lexer *self, char expected) {
 static char *get_token_substring(lexer *self, int start, int end) {
     int text_len = end - start;
     char *text = arena_alloc(&self->arena, text_len + 1);
-    // Ensure text_len is not negative, though it shouldn't be if logic is correct.
-    if (text_len < 0) { 
-        // This case should ideally not be reached. If it is, it indicates a deeper issue
-        // with start/end pointers. For now, produce an empty string to avoid crashing strncpy.
-        text_len = 0; 
-    }
     strncpy(text, self->source.data + start, text_len);
     text[text_len] = '\0';
+
+    // remove '\n' from string
+    int l = strlen(text);
+    if (l > 0 && text[l - 1] == '\n') {
+        text[l - 1] = '\0';
+    }
 
     return text;
 }
@@ -70,6 +70,9 @@ static void add_token(lexer *self, TokenType type, void *literal) {
         self->tokens.max = new_max;
         /*printf("Reallocated tokens");*/
     }
+
+    if (type == STRING || type == TRUE || type == FALSE || type == CHAR)
+        self->start++;
 
     const char *text = get_token_substring(self, self->start, self->current);
 
@@ -178,89 +181,48 @@ static void scan_number(lexer *self) {
 }
 
 static void scan_identifier(lexer *self) {
-    int token_start_offset = self->start; // This is the actual start of the token in the source
-
-    // Scan the initial word part.
-    // lexer_scan_token already did advance(), so self->current is one char past self->start.
-    // The first char is self->source.data[token_start_offset].
-    // The loop for the first word should effectively start from the character *after* the first one,
-    // or rather, self->current is already where peek() should start.
-    while (isalnum(peek(self)) || peek(self) == '_') {
-        advance(self);
+    char c = advance(self);
+    while (isalnum(c) || c == '_') {
+        c = advance(self);
     }
-    // Now, self->current is one position *after* the end of the first scanned word.
-    // The first word itself is from token_start_offset to self->current.
-    const char *first_word_text = get_token_substring(self, token_start_offset, self->current);
-    int end_of_first_word_offset = self->current; // Save position after the first word
+    const char *text = get_token_substring(self, self->start, self->current-1);
 
-    // Check for multi-word keywords
-    if (strcmp(first_word_text, "ALANG") == 0) {
-        int original_current_after_first_word = self->current;
-        if (peek(self) == ' ') { // Check for a space following "ALANG"
-            advance(self); // Consume the space
-            if (peek(self) == 'S' && peek_next(self) == 'A') { // Check for "SA"
-                advance(self); // Consume 'S'
-                advance(self); // Consume 'A'
-                // Ensure "SA" is a whole word (not a prefix like "SATURDAY")
-                if (!isalnum(peek(self)) && peek(self) != '_') {
-                    // Matched "ALANG SA". self->start is token_start_offset.
-                    // self->current is now at the end of "SA".
-                    add_token(self, ALANG_SA, NULL); // The lexeme will be "ALANG SA"
-                    return;
-                }
-            }
+    // check for ALANG SA
+    if (strcmp(text, "ALANG") == 0) {
+        if (peek(self) == 'S' && peek_next(self) == 'A') {
+            advance(self);
+            c = advance(self);
+            text = get_token_substring(self, self->start, self->current-1);
+            add_token(self, ALANG_SA, NULL);
+            return;
         }
-        // If " SA" was not matched or was part of a longer word, backtrack.
-        self->current = original_current_after_first_word; // Reset to after "ALANG"
     }
-    else if (strcmp(first_word_text, "KUNG") == 0) {
-        int original_current_after_first_word = self->current;
-        if (peek(self) == ' ') { // Check for a space following "KUNG"
-            advance(self); // Consume the space
-            int current_after_space = self->current; // Save position after space
 
-            // Check for "DILI"
-            if (peek(self) == 'D' && peek_next(self) == 'I') {
-                int temp_scan_current = self->current; // Save before "DILI" attempt
-                advance(self); // D
-                advance(self); // I
-                if (peek(self) == 'L' && peek_next(self) == 'I') {
-                    advance(self); // L
-                    advance(self); // I
-                    if (!isalnum(peek(self)) && peek(self) != '_') {
-                        add_token(self, KUNG_DILI, NULL); // Lexeme: "KUNG DILI"
-                        return;
-                    }
-                }
-                self->current = temp_scan_current; // Backtrack to start of "DILI" attempt if not fully matched
-            }
-
-            // Check for "WALA" (if DILI didn't match and return)
-            // self->current is at current_after_space if DILI check failed or backtracked to temp_scan_current (which was current_after_space)
-            if (peek(self) == 'W' && peek_next(self) == 'A') {
-                int temp_scan_current = self->current; // Save before "WALA" attempt
-                advance(self); // W
-                advance(self); // A
-                if (peek(self) == 'L' && peek_next(self) == 'A') {
-                    advance(self); // L
-                    advance(self); // A
-                    if (!isalnum(peek(self)) && peek(self) != '_') {
-                        add_token(self, KUNG_WALA, NULL); // Lexeme: "KUNG WALA"
-                        return;
-                    }
-                }
-                self->current = temp_scan_current; // Backtrack to start of "WALA" attempt if not fully matched
-            }
+    // check for KUNG DILI, KUNG WALA
+    if (strcmp(text, "KUNG") == 0) {
+        const char *kung_text = get_token_substring(self, self->current,
+                                                    self->current+4);
+        if(strcmp(kung_text, "DILI") == 0) {
+            advance(self);
+            advance(self);
+            advance(self);
+            advance(self);
+            add_token(self, KUNG_DILI, NULL);
+        } else if(strcmp(kung_text, "WALA") == 0) {
+            advance(self);
+            advance(self);
+            advance(self);
+            advance(self);
+            add_token(self, KUNG_WALA, NULL);
+        } else {
+            self->current--;
+            add_token(self, KUNG, NULL);
         }
-        // If no multi-word keyword part (" DILI" or " WALA") was matched.
-        self->current = original_current_after_first_word; // Reset to after "KUNG"
+        return;
     }
 
-    // If no multi-word keyword was matched and returned, it's a single-word identifier or keyword.
-    // Ensure self->current is positioned at the end of the first_word_text for the add_token call.
-    // The logic above should have reset self->current to end_of_first_word_offset (via original_current_after_first_word).
-    TokenType type = get_token_type(first_word_text);
-    add_token(self, type, NULL); // Lexeme will be first_word_text
+    self->current--;
+    add_token(self, get_token_type(text), NULL);
 }
 
 static token *previous(lexer *self) {
@@ -367,16 +329,18 @@ static void print_tokens(lexer *self) {
 
 void lexer_gen_tokens(lexer *self) {
     while (!is_at_end(self)) {
-        self->start = self->current;
         lexer_scan_token(self);
+        self->start = self->current;
     }
+
+    print_tokens(self);
 }
 
 void lexer_gen_input_tokens(lexer *self) {
     char c;
     while (!is_at_end(self)) {
-        self->start = self->current;
         c = advance(self);
+        self->start = self->current-1;
         switch(c) {
             case ' ':
             case '\t':
@@ -430,4 +394,5 @@ void lexer_gen_input_tokens(lexer *self) {
                 }
         }
     }
+    // print_tokens(self);
 }

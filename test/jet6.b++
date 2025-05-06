@@ -1,0 +1,11 @@
+SUGOD
+  MUGNA NUMERO a = 10
+  KUNG (a < 5)
+  PUNDOK {
+    IPAKITA: "small"
+  }
+  KUNG WALA
+  PUNDOK {
+    IPAKITA: "big"
+  }
+KATAPUSAN
