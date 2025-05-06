@@ -531,6 +531,10 @@ static ast_node *parse_switch_stmt(parser *self) {
     ast_node **cvals = arena_alloc(self->arena, sizeof(ast_node*) * cap);
     ast_node **cblks = arena_alloc(self->arena, sizeof(ast_node*) * cap);
     int count = 0;
+    if (!match(self, KASO)) {
+        parser_error(self, "(PULI) Expected at least one 'KASO' after switch expression");
+        return NULL;
+    }
     while (match(self, KASO)) {
         advance(self);
         if (!expect(self, LEFT_BRACE, "(KASO) Expected '{' after 'KASO'")) return NULL;
