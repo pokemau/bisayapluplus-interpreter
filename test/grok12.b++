@@ -1,0 +1,7 @@
+SUGOD
+MUGNA NUMERO x=1, y=2, z=3
+x = y + z
+y = x * 2
+z = y - x
+IPAKITA: x & " " & y & " " & z
+KATAPUSAN

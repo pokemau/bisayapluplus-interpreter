@@ -1,0 +1,33 @@
+SUGOD
+MUGNA NUMERO a, b
+MUGNA LETRA op
+IPAKITA: "Enter two numbers and an operator (+, -, *, /): "
+DAWAT: a, b, op
+KUNG (op == '+')
+PUNDOK{
+    IPAKITA: a + b
+}
+KUNG DILI (op == '-')
+PUNDOK{
+    IPAKITA: a - b
+}
+KUNG DILI (op == '*')
+PUNDOK{
+    IPAKITA: a * b
+}
+KUNG DILI (op == '/')
+PUNDOK{
+    KUNG (b <> 0)
+    PUNDOK{
+        IPAKITA: a / b
+    }
+    KUNG WALA
+    PUNDOK{
+        IPAKITA: "Division by zero"
+    }
+}
+KUNG WALA
+PUNDOK{
+    IPAKITA: "Invalid operator"
+}
+KATAPUSAN

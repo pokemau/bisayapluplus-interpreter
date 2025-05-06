@@ -1,0 +1,10 @@
+SUGOD
+MUGNA NUMERO i, j
+ALANG SA (i=1, i<=2, i++)
+PUNDOK{
+    ALANG SA (j=1, j<=2, j++)
+    PUNDOK{
+        IPAKITA: i & "," & j & " "
+    }
+}
+KATAPUSAN
