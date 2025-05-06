@@ -21,7 +21,7 @@ static value evaluate(interpreter *self, ast_node *node);
 static void execute_statement(interpreter *self, ast_node *node);
 
 static void interp_error(int line, const char *msg) {
-    fprintf(stderr, "%s\n", msg);
+    fprintf(stderr, "Semantic Error at Line [%d]: %s\n", line, msg);
     exit(1);
 }
 
@@ -76,20 +76,53 @@ static void execute_statement(interpreter *self, ast_node *node) {
                             ? evaluate(self, node->var_decl.inits[i])
                             : value_create_null(d_type);
             if (val.type != VAL_NULL && val.type != d_type) {
-                char buf[128];
-                snprintf(buf, 128, "Type '%s' can't be of type '%s'",
-                         get_string_from_value_type(val.type),
-                         get_string_from_value_type(d_type));
-                env_error(node->var_decl.names[i].line, buf);
+                // implicit type conversions:
+                if (d_type == VAL_NUMERO && val.type == VAL_TIPIK) {
+                    val.type = VAL_NUMERO;
+                    val.as.numero = (long)val.as.tipik;
+                } else if (d_type == VAL_TIPIK && val.type == VAL_NUMERO) {
+                    val.type = VAL_TIPIK;
+                    val.as.tipik = (double)val.as.numero;
+                } else {
+                    char buf[128];
+                    snprintf(buf, 128, "Type '%s' can't be assigned to variable of type '%s'",
+                             get_string_from_value_type(val.type),
+                             get_string_from_value_type(d_type));
+                    env_error(node->var_decl.names[i].line, buf);
+                }
             }
             env_define(self->env, node->var_decl.names[i].lexeme, val);
         }
         break;
 
     case AST_ASSIGNMENT:
-        // TODO by JOROsh: 
-        // check if the datatype is correct with the newly assigned value?
-        val = evaluate(self, node->assignment.expr);
+        if (node->assignment.expr->type == AST_ASSIGNMENT) {
+            execute_statement(self, node->assignment.expr);
+            val = evaluate(self, node->assignment.expr->assignment.expr);
+        }else {
+            val = evaluate(self, node->assignment.expr);
+        }
+
+        d_type = env_get_variable_type(self->env, node->assignment.var->lexeme);
+
+        // Check if the new value assigned is the same type as the variable
+        if (val.type != VAL_NULL && val.type != d_type) {
+            // implicit type conversions:
+            if (d_type == VAL_NUMERO && val.type == VAL_TIPIK) {
+                val.type = VAL_NUMERO;
+                val.as.numero = (long)val.as.tipik;
+            } else if (d_type == VAL_TIPIK && val.type == VAL_NUMERO) {
+                val.type = VAL_TIPIK;
+                val.as.tipik = (double)val.as.numero;
+            } else {
+                char buf[128];
+                snprintf(buf, 128, "Type '%s' can't be assigned to variable of type '%s'",
+                         get_string_from_value_type(val.type),
+                         get_string_from_value_type(d_type));
+                env_error(node->assignment.var->line, buf);
+            }
+        }
+        
         if (!env_assign(self->env, node->assignment.var->lexeme, val)) {
 
             char buf[128];
@@ -160,7 +193,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         // printf("string len: %d\n", string_len);
         if (node->input.var_count != expression_count) {
             char error_message[100];
-            sprintf(error_message, "User input count does not match with variable count - inputs: %d - variables: %d", expression_count, node->input.var_count);
+            sprintf(error_message, "User input count does not match with variable count - inputs: %d - variables: %d", (int)expression_count, node->input.var_count);
             env_error(node->input.vars[0].line, error_message);
             break;
         }
@@ -168,6 +201,9 @@ static void execute_statement(interpreter *self, ast_node *node) {
             .len = string_len, .data = input_string
         });
         lexer_gen_input_tokens(&sub_lexer);
+        if (sub_lexer.error_list->error_count > 0) {
+            return; //return 1
+        }
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
         ast_node **sub_ast_nodes = sub_parser_parse(&sub_parser, expression_count, node->input.vars);
         value val;
@@ -198,8 +234,9 @@ static void execute_statement(interpreter *self, ast_node *node) {
     case AST_ELSE_IF:
         val = evaluate(self, node->if_stmt.condition);
         if (val.type != VAL_TINUOD)
-            bpp_error(node->if_stmt.condition->binary.op->line,
-                      "Condition must be boolean");
+            fprintf(stderr, "Line: [%d], ERROR: %s\n", 
+                node->if_stmt.condition->binary.op->line,
+                "Condition must be boolean"); //ERROR
         if (val.as.tinuod) {
             if (node->if_stmt.then_block)
                 execute_statement(self, node->if_stmt.then_block);
@@ -213,7 +250,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         break;
     case AST_BLOCK:
         for (int i = 0; i < node->block.stmt_count; i++) {
-            execute_statement(self, &node->block.statements[i]);
+            execute_statement(self, node->block.statements[i]);
         }
         break;
     case AST_FOR:
@@ -256,6 +293,10 @@ static value evaluate(interpreter *self, ast_node *node) {
         switch (node->literal.value->type) {
 
         case NUMBER:
+            if (strchr(node->literal.value->lexeme, '.')) {
+                return value_create_tipik(
+                    *((double *)node->literal.value->literal));
+            }
             return value_create_numero(
                 *((double *)node->literal.value->literal));
         case CHAR:
@@ -265,7 +306,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case FALSE:
             return value_create_tinuod(false);
         default:
-            interp_error(node->literal.value->line, "Invalid type");
+            interp_error(node->literal.value->line, "Invalid type (Logic Error)");
         }
     case AST_VARIABLE:
         if (!env_get(self->env, node->variable.name->lexeme, &val)) {
@@ -348,7 +389,8 @@ static value evaluate(interpreter *self, ast_node *node) {
                              "Modulo only works with type 'NUMERO'");
             return value_create_numero(left.as.numero % right.as.numero);
         case SLASH:
-            if (right.as.numero == 0) {
+            if ((right.type == VAL_NUMERO && right.as.numero == 0) ||
+                (right.type == VAL_TIPIK && right.as.tipik == 0)) {
                 interp_error(node->binary.op->line, "Division by zero");
             }
             if (left.type == VAL_TIPIK)

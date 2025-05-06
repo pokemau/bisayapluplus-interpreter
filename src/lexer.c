@@ -8,11 +8,11 @@
 #include <ctype.h>
 
 
-void lexer_error(int line, const char *msg) {
-    fprintf(stderr, "Line [%d]: %s\n", line, msg);
-    exit(1);
+static void lexer_error(lexer *self, const char *msg) {
+    // fprintf(stderr, "Lexical Error at Line [%d]: %s\n", line, msg);
+    add_error(self->error_list, LEXICAL_ERROR, self->line, msg);
 }
-bool is_alpha(const char c) {
+static bool is_alpha(const char c) {
     return isalpha(c) || c == '_';
 }
 
@@ -86,12 +86,12 @@ static void add_token(lexer *self, TokenType type, void *literal) {
 }
 
 static void scan_string(lexer *self) {
-    while(peek(self) != '"' && !is_at_end(self)) {
+    while(peek(self) != '"' && !is_at_end(self) && peek_next(self) != '\n') {
         advance(self);
     }
 
-    if (is_at_end(self)) {
-        lexer_error(self->line, "Unterminated String");
+    if ((peek(self) != '"' && peek_next(self) == '\n') || is_at_end(self)) {
+        lexer_error(self, "Unterminated String!");
     }
 
     const char *text = get_token_substring(self,
@@ -110,7 +110,7 @@ static void scan_string(lexer *self) {
 }
 
 static void scan_char(lexer *self) {
-    if (isalnum(peek(self)) && (peek_next(self) == '\'')) {
+    if (isalnum(peek(self)) && (peek_next(self) == '\'') && peek_next(self) != '\n') {
         advance(self);
         advance(self);
         const char *text = get_token_substring(self,
@@ -121,7 +121,7 @@ static void scan_char(lexer *self) {
         advance(self);
         return;
     }
-    lexer_error(self->line, "Unterminated or Invalid Char!");
+    lexer_error(self, "Unterminated or Invalid Char!");
 }
 
 static void scan_input_string(lexer *self) {
@@ -142,18 +142,15 @@ static void scan_input_string(lexer *self) {
 
     // might remove later if the feature of user input TINUOD is not a thing
     self->start--;
-    printf("Text: %s\n", text);
     if (strcmp(text, "OO") == 0) {
         add_token(self, TRUE, NULL);
     } else if (strcmp(text, "DILI") == 0) {
         add_token(self, FALSE, NULL);
     } else if (strlen(text) > 1){
-        lexer_error(self->line, "User input for LETRA variable was given a string!");
+        lexer_error(self, "User input for LETRA variable was given a string!");
     } else{
         add_token(self, CHAR, (void*)text);
     }
-
-    return;
 }
 
 static void scan_comment(lexer *self) {
@@ -218,6 +215,7 @@ static void scan_identifier(lexer *self) {
             advance(self);
             add_token(self, KUNG_WALA, NULL);
         } else {
+            self->current--;
             add_token(self, KUNG, NULL);
         }
         return;
@@ -290,8 +288,9 @@ static void lexer_scan_token(lexer *self) {
             } else if (is_alpha(c)) {
                 scan_identifier(self);
             } else {
-                printf("{ %c }\n", c);
-                lexer_error(self->line, "character!");
+                char buf[128];
+                sprintf(buf, "Unknown character '%c'!" , c);
+                lexer_error(self, buf);
             }
             break;
     }
@@ -301,6 +300,7 @@ lexer lexer_create(struct lexer_src *source) {
     lexer self;
     self.source = *source;
     self.arena = arena_create(INITIAL_ARENA_SIZE);
+    self.error_list = create_error_list(&self.arena);
     self.tokens.size = 0;
     self.tokens.max = INITIAL_TOKEN_CAPACITY;
     self.tokens.list = arena_alloc(&self.arena,
@@ -394,5 +394,5 @@ void lexer_gen_input_tokens(lexer *self) {
                 }
         }
     }
-    print_tokens(self);
+    // print_tokens(self);
 }

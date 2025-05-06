@@ -1,0 +1,11 @@
+SUGOD
+    MUGNA LETRA x
+    DAWAT: x
+    IPAKITA: "X Value: " & x & $
+--    MUGNA LETRA y = -'y'
+    MUGNA TINUOD z = "DILI"
+    KUNG (z 1)
+    PUNDOK{
+        IPAKITA: "Yeah Bro" & $
+    }
+KATAPUSAN

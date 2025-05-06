@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "ast.h"
 #include "util/arena.h"
+#include "util/error.h"
 
 typedef struct parser {
     token_list *tokens;
@@ -11,6 +12,7 @@ typedef struct parser {
     int token_count;
     token *head;
     arena *arena;
+    error_list *error_list;
 } parser;
 
 parser parser_create(token_list *tokens, arena *arena);
