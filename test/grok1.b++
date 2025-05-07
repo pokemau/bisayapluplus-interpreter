@@ -1,0 +1,7 @@
+SUGOD
+MUGNA NUMERO a=10, b, c=20
+MUGNA LETRA x='a', y
+MUGNA TINUOD t="OO", f="DILI"
+MUGNA TIPIK pi=3.14, e=2.718
+IPAKITA: a & " " & b & " " & c & " " & x & " " & y & " " & t & " " & f & " " & pi & " " & e
+KATAPUSAN

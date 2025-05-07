@@ -1,0 +1,5 @@
+SUGOD
+MUGNA NUMERO a=10, b=3
+MUGNA TIPIK c=10.0, d=3.0
+IPAKITA: a / b & " " & c / d
+KATAPUSAN

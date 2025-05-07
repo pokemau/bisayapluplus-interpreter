@@ -1,0 +1,10 @@
+SUGOD
+MUGNA TINUOD t1="OO", t2="DILI"
+MUGNA TINUOD result
+result = t1 O t2
+IPAKITA: result & " "
+result = t1 UG t2
+IPAKITA: result & " "
+result = DILI t1
+IPAKITA: result
+KATAPUSAN

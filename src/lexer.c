@@ -110,7 +110,7 @@ static void scan_string(lexer *self) {
 }
 
 static void scan_char(lexer *self) {
-    if (isalnum(peek(self)) && (peek_next(self) == '\'') && peek_next(self) != '\n') {
+    if ((peek_next(self) == '\'') && peek_next(self) != '\n') {
         advance(self);
         advance(self);
         const char *text = get_token_substring(self,
@@ -139,9 +139,44 @@ static void scan_input_string(lexer *self) {
             break;
     }
     text[i+1] = '\0';
+    
+    self->start--;
+
+    // Remove surrounding quotes
+    int len = strlen(text);
+    if (len >= 2 && 
+        (text[0] == '\'' || text[0] == '\"') && 
+        (text[len - 1] == '\'' || text[len - 1] == '\"')) {
+
+            bool singleQuote = text[0] == '\'';
+            // Shift the string to remove the first quote
+            memmove(text, text + 1, len - 1);
+            // Null-terminate the string to remove the last quote
+            text[len - 2] = '\0';
+            
+
+            if (singleQuote) {
+                if (strlen(text) > 1){
+                    lexer_error(self, "User input for LETRA variable was given a string!");
+                } else{
+                    add_token(self, CHAR, (void*)text);
+                }
+            } else{
+                if (strcmp(text, "OO") == 0) {
+                    add_token(self, TRUE, NULL);
+                } else if (strcmp(text, "DILI") == 0) {
+                    add_token(self, FALSE, NULL);
+                } else if (strlen(text) > 1){
+                    lexer_error(self, "User input for LETRA variable was given a string!");
+                } else{
+                    add_token(self, CHAR, (void*)text);
+                }
+            }
+        return;
+    }
+
 
     // might remove later if the feature of user input TINUOD is not a thing
-    self->start--;
     if (strcmp(text, "OO") == 0) {
         add_token(self, TRUE, NULL);
     } else if (strcmp(text, "DILI") == 0) {

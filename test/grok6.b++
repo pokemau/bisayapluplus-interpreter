@@ -1,0 +1,15 @@
+SUGOD
+MUGNA NUMERO x=10
+KUNG (x > 10)
+PUNDOK{
+    IPAKITA: "x > 10"
+}
+KUNG DILI (x == 10)
+PUNDOK{
+    IPAKITA: "x == 10"
+}
+KUNG WALA
+PUNDOK{
+    IPAKITA: "x < 10"
+}
+KATAPUSAN
