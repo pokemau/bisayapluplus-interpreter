@@ -34,11 +34,6 @@ void run(const char *data, size_t total) {
         return;
     }
 
-    printf("=========================\n");
-    printf("========= AST ===========\n");
-    printf("=========================\n");
-    ast_print(ast, 0);
-
     i = interp_create(&a);
     interp_execute(i, ast);
 
