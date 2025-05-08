@@ -368,7 +368,7 @@ void lexer_gen_tokens(lexer *self) {
         self->start = self->current;
     }
 
-    print_tokens(self);
+    // print_tokens(self);
 }
 
 void lexer_gen_input_tokens(lexer *self) {

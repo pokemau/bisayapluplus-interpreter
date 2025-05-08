@@ -4,18 +4,12 @@
 #include "parser.h"
 #include "token.h"
 #include "value.h"
-#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define equality(a, b) ((a) > (b) ? 1 : (a) < (b) ? -1 : 0)
-
-// TODO:
-// fix evaluate AST_BINARY
-
-bool interp_has_error = false;
+static int count = 0;
 
 static value evaluate(interpreter *self, ast_node *node);
 static void execute_statement(interpreter *self, ast_node *node);
@@ -51,6 +45,12 @@ void interp_execute(interpreter *self, ast_node *node) {
         for (int i = 0; i < node->program.stmt_count; i++) {
             execute_statement(self, &node->program.statements[i]);
         }
+
+        if (count == 0)
+            printf("Compiled Successfully\n");
+        else
+            printf("\n");
+
         break;
     default:
         fprintf(stderr, "Invalid Node!");
@@ -85,11 +85,20 @@ static void execute_statement(interpreter *self, ast_node *node) {
                     val.as.tipik = (double)val.as.numero;
                 } else {
                     char buf[128];
-                    snprintf(buf, 128, "Type '%s' can't be assigned to variable of type '%s'",
-                             get_string_from_value_type(val.type),
-                             get_string_from_value_type(d_type));
+                    snprintf(
+                        buf, 128,
+                        "Type '%s' can't be assigned to variable of type '%s'",
+                        get_string_from_value_type(val.type),
+                        get_string_from_value_type(d_type));
                     env_error(node->var_decl.names[i].line, buf);
                 }
+            }
+            value temp;
+            if (env_get(self->env, node->var_decl.names[i].lexeme, &temp)) {
+                char buf[128];
+                snprintf(buf, 128, "Redeclaration of variable %s",
+                         node->var_decl.names[i].lexeme);
+                interp_error(node->var_decl.names[i].line, buf);
             }
             env_define(self->env, node->var_decl.names[i].lexeme, val);
         }
@@ -99,7 +108,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         if (node->assignment.expr->type == AST_ASSIGNMENT) {
             execute_statement(self, node->assignment.expr);
             val = evaluate(self, node->assignment.expr->assignment.expr);
-        }else {
+        } else {
             val = evaluate(self, node->assignment.expr);
         }
 
@@ -116,13 +125,14 @@ static void execute_statement(interpreter *self, ast_node *node) {
                 val.as.tipik = (double)val.as.numero;
             } else {
                 char buf[128];
-                snprintf(buf, 128, "Type '%s' can't be assigned to variable of type '%s'",
+                snprintf(buf, 128,
+                         "Type '%s' can't be assigned to variable of type '%s'",
                          get_string_from_value_type(val.type),
                          get_string_from_value_type(d_type));
                 env_error(node->assignment.var->line, buf);
             }
         }
-        
+
         if (!env_assign(self->env, node->assignment.var->lexeme, val)) {
 
             char buf[128];
@@ -132,6 +142,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         }
         break;
     case AST_PRINT:
+        count++;
         for (int i = 0; i < node->print.expr_count; i++) {
             ast_node *curr = node->print.exprs[i];
             if (curr->type == AST_LITERAL) {
@@ -175,17 +186,22 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
         }
         if (strlen(input_string) == 0) {
-            interp_error(node->input.vars[0].line, "User input has a length of zero. Please input properly!");
+            interp_error(
+                node->input.vars[0].line,
+                "User input has a length of zero. Please input properly!");
         }
 
         // expecting at least 1 token in an input
         size_t expression_count = 1;
 
         int token_start = 0;
-        int string_len = 0;     // iteration counter and records the strings length after the while loop below
+        int string_len = 0; // iteration counter and records the strings length
+                            // after the while loop below
         while (input_string[string_len] != '\0' && expression_count < 10) {
             if (input_string[string_len] == ',') {
-                token_start = string_len + 1;    // resets the token_start to point at the next lexeme's starting location
+                token_start =
+                    string_len + 1; // resets the token_start to point at the
+                                    // next lexeme's starting location
                 expression_count++;
             }
             string_len++;
@@ -193,55 +209,64 @@ static void execute_statement(interpreter *self, ast_node *node) {
         // printf("string len: %d\n", string_len);
         if (node->input.var_count != expression_count) {
             char error_message[100];
-            sprintf(error_message, "User input count does not match with variable count - inputs: %d - variables: %d", (int)expression_count, node->input.var_count);
+            sprintf(error_message,
+                    "User input count does not match with variable count - "
+                    "inputs: %d - variables: %d",
+                    (int)expression_count, node->input.var_count);
             env_error(node->input.vars[0].line, error_message);
             break;
         }
-        lexer sub_lexer = lexer_create(&(lexer_src) {
-            .len = string_len, .data = input_string
-        });
+        lexer sub_lexer =
+            lexer_create(&(lexer_src){.len = string_len, .data = input_string});
         lexer_gen_input_tokens(&sub_lexer);
         if (sub_lexer.error_list->error_count > 0) {
-            interp_error(node->input.vars[0].line, sub_lexer.error_list->errors[0].message);
+            interp_error(node->input.vars[0].line,
+                         sub_lexer.error_list->errors[0].message);
             return;
         }
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
-        ast_node **sub_ast_nodes = sub_parser_parse(&sub_parser, expression_count, node->input.vars);
+        ast_node **sub_ast_nodes =
+            sub_parser_parse(&sub_parser, expression_count, node->input.vars);
         if (sub_parser.error_list->error_count > 0) {
-            interp_error(node->input.vars[0].line, sub_parser.error_list->errors[0].message);
+            interp_error(node->input.vars[0].line,
+                         sub_parser.error_list->errors[0].message);
             return;
         }
         value val;
         for (int i = 0; i < expression_count; i++) {
             val = evaluate(self, sub_ast_nodes[i]);
-            value_type variable_type = env_get_variable_type(self->env, node->input.vars[i].lexeme);
-            // printf("Variable %s datatype: %s\n", node->input.vars[i].lexeme, get_string_from_value_type(variable_type));
+            value_type variable_type =
+                env_get_variable_type(self->env, node->input.vars[i].lexeme);
+            // printf("Variable %s datatype: %s\n", node->input.vars[i].lexeme,
+            // get_string_from_value_type(variable_type));
             if (!(val.type == VAL_LETRA && variable_type == VAL_LETRA) &&
                 !(val.type == VAL_TIPIK && variable_type == VAL_TIPIK) &&
                 !(val.type == VAL_NUMERO && variable_type == VAL_NUMERO) &&
                 !(val.type == VAL_TINUOD && variable_type == VAL_TINUOD)) {
-                    char error_message[100];
-                    sprintf(error_message, "User input datatype does not match with variable datatype - input: %s - variable \'%s\': %s ", 
+                char error_message[100];
+                sprintf(error_message,
+                        "User input datatype does not match with variable "
+                        "datatype - input: %s - variable \'%s\': %s ",
                         get_string_from_value_type(val.type),
                         node->input.vars[i].lexeme,
                         get_string_from_value_type(variable_type));
-                    env_error(node->input.vars[0].line, error_message);
-                    break;
+                env_error(node->input.vars[0].line, error_message);
+                break;
             }
             env_assign(self->env, node->input.vars[i].lexeme, val);
         }
 
         // token_list *sub_lexer_tokens = &sub_lexer.tokens;
-    
+
         break;
 
     case AST_IF:
     case AST_ELSE_IF:
         val = evaluate(self, node->if_stmt.condition);
         if (val.type != VAL_TINUOD)
-            fprintf(stderr, "Line: [%d], ERROR: %s\n", 
-                node->if_stmt.condition->binary.op->line,
-                "Condition must be boolean"); //ERROR
+            fprintf(stderr, "Line: [%d], ERROR: %s\n",
+                    node->if_stmt.condition->binary.op->line,
+                    "Condition must be boolean"); // ERROR
         if (val.as.tinuod) {
             if (node->if_stmt.then_block)
                 execute_statement(self, node->if_stmt.then_block);
@@ -342,7 +367,8 @@ static value evaluate(interpreter *self, ast_node *node) {
         case FALSE:
             return value_create_tinuod(false);
         default:
-            interp_error(node->literal.value->line, "Invalid type (Logic Error)");
+            interp_error(node->literal.value->line,
+                         "Invalid type (Logic Error)");
         }
     case AST_VARIABLE:
         if (!env_get(self->env, node->variable.name->lexeme, &val)) {
@@ -393,7 +419,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case PLUS:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik + right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_letra(left.as.letra + right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero + right.as.numero);
@@ -403,7 +429,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case MINUS:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik - right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_letra(left.as.letra - right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero - right.as.numero);
@@ -412,7 +438,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case STAR:
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik * right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_letra(left.as.letra * right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero * right.as.numero);
@@ -432,7 +458,7 @@ static value evaluate(interpreter *self, ast_node *node) {
             }
             if (left.type == VAL_TIPIK)
                 return value_create_tipik(left.as.tipik / right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_letra(left.as.letra / right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_numero(left.as.numero / right.as.numero);
@@ -441,7 +467,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case EQUAL_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik == right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_tinuod(left.as.letra == right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero == right.as.numero);
@@ -450,7 +476,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case NOT_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik != right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_tinuod(left.as.letra != right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero != right.as.numero);
@@ -459,7 +485,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case LESS:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik < right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_tinuod(left.as.letra < right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero < right.as.numero);
@@ -468,7 +494,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         case LESS_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik <= right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_tinuod(left.as.letra <= right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero <= right.as.numero);
@@ -477,16 +503,16 @@ static value evaluate(interpreter *self, ast_node *node) {
         case GREATER:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik > right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_tinuod(left.as.letra > right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero > right.as.numero);
             else if (left.type == VAL_TINUOD)
-                return value_create_tinuod(left.as.tinuod > right.as.tinuod); 
+                return value_create_tinuod(left.as.tinuod > right.as.tinuod);
         case GREATER_EQUAL:
             if (left.type == VAL_TIPIK)
                 return value_create_tinuod(left.as.tipik >= right.as.tipik);
-            else if(left.type == VAL_LETRA)
+            else if (left.type == VAL_LETRA)
                 return value_create_tinuod(left.as.letra >= right.as.letra);
             else if (left.type == VAL_NUMERO)
                 return value_create_tinuod(left.as.numero >= right.as.numero);
@@ -495,12 +521,14 @@ static value evaluate(interpreter *self, ast_node *node) {
         case UG:
             // other dataytypes might be allowed to be UG but idk
             if (left.type != VAL_TINUOD) {
-                interp_error(node->binary.op->line, "UG operation only works with TINUODs");
+                interp_error(node->binary.op->line,
+                             "UG operation only works with TINUODs");
             }
             return value_create_tinuod(left.as.tinuod && right.as.tinuod);
         case O:
             if (left.type != VAL_TINUOD) {
-                interp_error(node->binary.op->line, "O operation only works with TINUODs");
+                interp_error(node->binary.op->line,
+                             "O operation only works with TINUODs");
             }
             return value_create_tinuod(left.as.tinuod || right.as.tinuod);
         default:
