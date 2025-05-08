@@ -21,6 +21,8 @@ static ast_node *parse_var_decl(parser *self);
 static ast_node *parse_assignment(parser *self);
 
 static ast_node *parse_block(parser *self);
+static ast_node *parse_switch_stmt(parser *self);
+static ast_node *parse_switch_stmt(parser *self);
 
 static ast_node *parse_expression(parser *self);
 static ast_node *parse_binary(parser *self , int precedence);
@@ -120,6 +122,8 @@ static ast_node *parse_statement(parser *self) {
         res = parse_input_stmt(self);
     } else if (match(self, KUNG)) {
         res = parse_if_stmt(self);
+    } else if (match(self, PULI)) {
+        res = parse_switch_stmt(self);
     } else if (match(self, KATAPUSAN)) {
         while (!is_at_end(self))
             advance(self);
@@ -511,6 +515,55 @@ static ast_node *parse_block(parser *self) {
     }
     block->block.stmt_count = stmt_count;
     return block;
+}
+
+// Parse 'switch' statement: PULI(expr) KASO{val}: PUNDOK{ ... }
+static ast_node *parse_switch_stmt(parser *self) {
+    // consume 'PULI'
+    advance(self);
+    if (!expect(self, LEFT_PAREN, "(PULI) Expected '(' after 'PULI'")) return NULL;
+    ast_node *expr = parse_expression(self);
+    if (!expr) return NULL;
+    if (!expect(self, RIGHT_PAREN, "(PULI) Expected ')' after expression")) return NULL;
+    while (match(self, NEWLINE)) advance(self);
+
+    int cap = 4;
+    ast_node **cvals = arena_alloc(self->arena, sizeof(ast_node*) * cap);
+    ast_node **cblks = arena_alloc(self->arena, sizeof(ast_node*) * cap);
+    int count = 0;
+    if (!match(self, KASO)) {
+        parser_error(self, "(PULI) Expected at least one 'KASO' after switch expression");
+        return NULL;
+    }
+    while (match(self, KASO)) {
+        advance(self);
+        if (!expect(self, LEFT_BRACE, "(KASO) Expected '{' after 'KASO'")) return NULL;
+        ast_node *val = parse_expression(self);
+        if (!val) return NULL;
+        if (!expect(self, RIGHT_BRACE, "(KASO) Expected '}' after case value")) return NULL;
+        if (!expect(self, COLON, "(KASO) Expected ':' after case")) return NULL;
+        while (match(self, NEWLINE)) advance(self);
+        ast_node *blk = parse_block(self);
+        if (!blk) return NULL;
+        cvals[count] = val;
+        cblks[count] = blk;
+        count++;
+        if (count == cap) {
+            int n = cap * 2;
+            ast_node **nv = arena_alloc(self->arena, sizeof(ast_node*) * n);
+            ast_node **nb = arena_alloc(self->arena, sizeof(ast_node*) * n);
+            memcpy(nv, cvals, sizeof(ast_node*) * count);
+            memcpy(nb, cblks, sizeof(ast_node*) * count);
+            cvals = nv; cblks = nb; cap = n;
+        }
+        while (match(self, NEWLINE)) advance(self);
+    }
+    ast_node *node = ast_new_node(self->arena, AST_SWITCH);
+    node->switch_stmt.expr = expr;
+    node->switch_stmt.case_values = cvals;
+    node->switch_stmt.case_blocks = cblks;
+    node->switch_stmt.case_count = count;
+    return node;
 }
 
 static ast_node *parse_if_stmt(parser *self) {

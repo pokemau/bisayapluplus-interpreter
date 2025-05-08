@@ -13,7 +13,8 @@ typedef enum ast_node_type {
     AST_IF,         // KUNG
     AST_ELSE_IF,    // KUNG DILI
     AST_ELSE,       // KUNG WALA
-    AST_FOR,        // ALAG SA
+    AST_FOR,        // ALANG SA
+    AST_SWITCH,     // PULI
     AST_BLOCK,      // PUNDOK
     AST_BINARY,     // Binary operations (+, -, /, *)
     AST_UNARY,      // Unary operatins (+, -)
@@ -72,6 +73,13 @@ struct ast_node {
             ast_node *update;
             ast_node *body;
         } for_stmt;
+        
+        struct {
+            ast_node *expr;          // switch expression
+            ast_node **case_values;   // array of case literal expressions
+            ast_node **case_blocks;   // array of blocks for each case
+            int case_count;
+        } switch_stmt;
 
         struct {
             ast_node **statements;

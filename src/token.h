@@ -58,6 +58,8 @@ typedef enum TokenType {
     KUNG,
     WALA,
     KUNG_WALA, KUNG_DILI,
+    PULI,
+    KASO,
     PUNDOK,
     ALANG_SA,
 
@@ -117,6 +119,8 @@ static const char *token_val[] = {
     "WALA",
     "KUNG_WALA",
     "KUNG_DILI",
+    "PULI",
+    "KASO",
     "PUNDOK",
     "ALANG_SA",
     "EOFILE",

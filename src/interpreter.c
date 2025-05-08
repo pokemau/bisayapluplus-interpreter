@@ -304,6 +304,37 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
         }
         break;
+    case AST_SWITCH: {
+        // evaluate switch expression
+        value sel = evaluate(self, node->switch_stmt.expr);
+        // iterate cases
+        for (int i = 0; i < node->switch_stmt.case_count; i++) {
+            value cv = evaluate(self, node->switch_stmt.case_values[i]);
+            bool match_case = false;
+            if (sel.type == cv.type) {
+                switch (sel.type) {
+                case VAL_NUMERO:
+                    match_case = (sel.as.numero == cv.as.numero);
+                    break;
+                case VAL_TIPIK:
+                    match_case = (sel.as.tipik == cv.as.tipik);
+                    break;
+                case VAL_LETRA:
+                    match_case = (sel.as.letra == cv.as.letra);
+                    break;
+                case VAL_TINUOD:
+                    match_case = (sel.as.tinuod == cv.as.tinuod);
+                    break;
+                default:
+                    break;
+                }
+            }
+            if (match_case) {
+                execute_statement(self, node->switch_stmt.case_blocks[i]);
+                break;
+            }
+        }
+    } break;
 
     default:
         break;

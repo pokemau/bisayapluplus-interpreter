@@ -1,0 +1,40 @@
+SUGOD
+MUGNA NUMERO day = 5
+PULI(day)
+KASO{1}:
+PUNDOK{
+  IPAKITA: "Monday"
+  IPAKITA: $
+}
+KASO{2}:
+PUNDOK{
+  IPAKITA: "Tuesday"
+  IPAKITA: $
+}
+KASO{3}:
+PUNDOK{
+  IPAKITA: "Wednesday"
+  IPAKITA: $
+}
+KASO{4}:
+PUNDOK{
+  IPAKITA: "Thursday"
+  IPAKITA: $
+}
+KASO{5}:
+PUNDOK{
+  IPAKITA: "Friday"
+  IPAKITA: $
+}
+KASO{6}:
+PUNDOK{
+  IPAKITA: "Saturday"
+  IPAKITA: $
+}
+KASO{7}:
+PUNDOK{
+  IPAKITA: "Sunday"
+  IPAKITA: $
+}
+
+KATAPUSAN
