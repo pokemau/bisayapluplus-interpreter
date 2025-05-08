@@ -10,6 +10,7 @@ struct env_elem {
     char *name;
     value value;
     env_elem *next;
+    int scope;
 };
 
 // lenked lest
@@ -24,9 +25,9 @@ environment *env_create(environment *parent, arena *arena);
 
 void env_error(int line, const char *msg);
 void env_free(environment *self);
-void env_define(environment *self, const char *name, value val);
-bool env_get(environment *self, const char *name, value *out);
-bool env_assign(environment *self, const char *name, value val);
-value_type env_get_variable_type(environment *self, const char *name);
-
+void env_define(environment *self, const char *name, value val, int line, int scope);
+bool env_get(environment *self, const char *name, value *out, int scope);
+bool env_assign(environment *self, const char *name, value val, int scope);
+value_type env_get_variable_type(environment *self, const char *name, int scope);
+void env_unlink_by_scope(environment *self, int scope);
 #endif

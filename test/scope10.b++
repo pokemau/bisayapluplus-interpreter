@@ -1,0 +1,14 @@
+SUGOD
+MUGNA NUMERO x=100, i
+ALANG SA (i=1, i<=2, i++)
+PUNDOK{
+    MUGNA NUMERO x=i
+    KUNG (x == 1)
+    PUNDOK{
+        MUGNA NUMERO x=999
+        IPAKITA: x & $
+    }
+    IPAKITA: x & $
+}
+IPAKITA: x
+KATAPUSAN

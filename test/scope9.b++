@@ -1,0 +1,13 @@
+SUGOD
+KUNG ("OO" == "OO")
+PUNDOK{
+    MUGNA NUMERO temp=1
+    IPAKITA: temp & $
+}
+MUGNA NUMERO ctr
+ALANG SA (ctr=1, ctr<=2, ctr++)
+PUNDOK{
+    MUGNA NUMERO temp=ctr
+    IPAKITA: temp & $
+}
+KATAPUSAN

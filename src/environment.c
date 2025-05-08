@@ -32,66 +32,119 @@ void env_free(environment *self) {
     free(self);
 }
 
-void env_define(environment *self, const char *name, value val) {
+void env_define(environment *self, const char *name, value val, int line, int scope) {
+    // printf("Defining variable %s, scope %d\n", name, scope);
+
+    // Check for redeclaration in the current scope
+    environment *curr = self;
+    while (curr) {
+        env_elem *elem = curr->list;
+        while (elem) {
+            if (strcmp(elem->name, name) == 0 && elem->scope == scope) {
+                char buf[128];
+                snprintf(buf, 128, "Redeclaration of variable %s",
+                        elem->name);
+                env_error(line, buf);
+            }
+            elem = elem->next;
+        }
+        curr = curr->parent;
+    }
+
     env_elem *elem = arena_alloc(self->arena, sizeof(env_elem));
     size_t name_len = strlen(name) + 1;
     elem->name = arena_alloc(self->arena, name_len);
     memcpy(elem->name, name, name_len);
     elem->value = val;
     elem->next = self->list;
+    elem->scope = scope;
     self->list = elem;
 }
 
-bool env_get(environment *self, const char *name, value *out) {
+bool env_get(environment *self, const char *name, value *out, int scope) {
+    // printf("Getting variable %s, scope %d\n", name, scope);
     environment *curr = self;
+    env_elem *found = NULL;
 
     while (curr) {
         env_elem *elem = curr->list;
         while (elem) {
-            if (strcmp(elem->name, name) == 0) {
-                *out = elem->value;
-                return true;
+            if (strcmp(elem->name, name) == 0 ) {
+                if (!found || elem->scope > found->scope) {
+                    found = elem;
+                }
             }
             elem = elem->next;
         }
         curr = curr->parent;
     }
+    if (found) {
+        *out = found->value;
+        return true;
+    }
     return false;
 }
 
-bool env_assign(environment *self, const char *name, value val) {
-
+bool env_assign(environment *self, const char *name, value val, int scope) {
+    // printf("Assigning variable %s, scope %d\n", name, scope);
     environment *curr = self;
+    env_elem *found = NULL;
 
     while (curr) {
         env_elem *elem = curr->list;
         while (elem) {
-            if (strcmp(elem->name, name) == 0) {
-                elem->value = val;
-                return true;
+            if (strcmp(elem->name, name) == 0 ) {
+                if (!found || elem->scope > found->scope) {
+                    found = elem;
+                }
             }
             elem = elem->next;
         }
         curr = curr->parent;
+    }
+    if (found) {
+        found->value = val;
+        return true;
     }
     return false;
 }
 
 void env_free(environment *self);
 
-value_type env_get_variable_type(environment *self, const char *name) {
-
+value_type env_get_variable_type(environment *self, const char *name, int scope) {
+    // printf("Getting variable type %s, scope %d\n", name, scope);
     environment *curr = self;
+    env_elem *found = NULL;
 
     while (curr) {
         env_elem *elem = curr->list;
         while (elem) {
-            if (strcmp(elem->name, name) == 0) {
-                return get_variable_type(elem->value);
+            if (strcmp(elem->name, name) == 0 ) {
+                if (!found || elem->scope > found->scope) {
+                    found = elem;
+                }
             }
             elem = elem->next;
         }
         curr = curr->parent;
     }
+    if (found) {
+        return get_variable_type(found->value);
+    }
     return VAL_NOT_EXIST;
+}
+
+void env_unlink_by_scope(environment *self, int scope) {
+    // printf("Unlinking scope %d\n", scope);
+    env_elem **current = &self->list;
+
+    while (*current) {
+        env_elem *elem = *current;
+
+        if (elem->scope == scope) {
+            *current = elem->next;
+            continue;
+        }
+        current = &elem->next;
+    }
 }

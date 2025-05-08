@@ -1,0 +1,10 @@
+SUGOD
+    MUGNA NUMERO x
+    KUNG("OO") 
+    PUNDOK {
+        MUGNA NUMERO y = 5
+        IPAKITA: y & $
+    }
+    IPAKITA: y
+
+KATAPUSAN

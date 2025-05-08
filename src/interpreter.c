@@ -10,6 +10,7 @@
 #include <string.h>
 
 static int count = 0;
+static int scope = 0;
 
 static value evaluate(interpreter *self, ast_node *node);
 static void execute_statement(interpreter *self, ast_node *node);
@@ -93,14 +94,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
                     env_error(node->var_decl.names[i].line, buf);
                 }
             }
-            value temp;
-            if (env_get(self->env, node->var_decl.names[i].lexeme, &temp)) {
-                char buf[128];
-                snprintf(buf, 128, "Redeclaration of variable %s",
-                         node->var_decl.names[i].lexeme);
-                interp_error(node->var_decl.names[i].line, buf);
-            }
-            env_define(self->env, node->var_decl.names[i].lexeme, val);
+            env_define(self->env, node->var_decl.names[i].lexeme, val, node->var_decl.names[i].line, scope);
         }
         break;
 
@@ -112,7 +106,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
             val = evaluate(self, node->assignment.expr);
         }
 
-        d_type = env_get_variable_type(self->env, node->assignment.var->lexeme);
+        d_type = env_get_variable_type(self->env, node->assignment.var->lexeme, scope);
 
         // Check if the new value assigned is the same type as the variable
         if (val.type != VAL_NULL && val.type != d_type) {
@@ -133,7 +127,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
         }
 
-        if (!env_assign(self->env, node->assignment.var->lexeme, val)) {
+        if (!env_assign(self->env, node->assignment.var->lexeme, val, scope)) {
 
             char buf[128];
             snprintf(buf, 128, "Undefined variable '%s'",
@@ -236,7 +230,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         for (int i = 0; i < expression_count; i++) {
             val = evaluate(self, sub_ast_nodes[i]);
             value_type variable_type =
-                env_get_variable_type(self->env, node->input.vars[i].lexeme);
+                env_get_variable_type(self->env, node->input.vars[i].lexeme, scope);
             // printf("Variable %s datatype: %s\n", node->input.vars[i].lexeme,
             // get_string_from_value_type(variable_type));
             if (!(val.type == VAL_LETRA && variable_type == VAL_LETRA) &&
@@ -253,7 +247,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
                 env_error(node->input.vars[0].line, error_message);
                 break;
             }
-            env_assign(self->env, node->input.vars[i].lexeme, val);
+            env_assign(self->env, node->input.vars[i].lexeme, val, scope);
         }
 
         // token_list *sub_lexer_tokens = &sub_lexer.tokens;
@@ -269,14 +263,20 @@ static void execute_statement(interpreter *self, ast_node *node) {
                     "Condition must be boolean"); // ERROR
         if (val.as.tinuod) {
             if (node->if_stmt.then_block)
+                scope++;
                 execute_statement(self, node->if_stmt.then_block);
-        } else if (node->if_stmt.else_block) {
+                env_unlink_by_scope(self->env, scope--);
+            } else if (node->if_stmt.else_block) {
+            scope++;
             execute_statement(self, node->if_stmt.else_block);
+            env_unlink_by_scope(self->env, scope--);
         }
         break;
     case AST_ELSE:
         if (node->if_stmt.then_block)
+            scope++;
             execute_statement(self, node->if_stmt.then_block);
+            env_unlink_by_scope(self->env, scope--);
         break;
     case AST_BLOCK:
         for (int i = 0; i < node->block.stmt_count; i++) {
@@ -296,7 +296,9 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
 
             if (node->for_stmt.body) {
+                scope++;
                 execute_statement(self, node->for_stmt.body);
+                env_unlink_by_scope(self->env, scope--);
             }
 
             if (node->for_stmt.update) {
@@ -340,7 +342,7 @@ static value evaluate(interpreter *self, ast_node *node) {
                          "Invalid type (Logic Error)");
         }
     case AST_VARIABLE:
-        if (!env_get(self->env, node->variable.name->lexeme, &val)) {
+        if (!env_get(self->env, node->variable.name->lexeme, &val, scope)) {
             char buf[128];
             snprintf(buf, 128, "Undefined variable '%s'",
                      node->variable.name->lexeme);
@@ -349,7 +351,7 @@ static value evaluate(interpreter *self, ast_node *node) {
         return val;
     case AST_ASSIGNMENT:
         val = evaluate(self, node->assignment.expr);
-        env_assign(self->env, node->assignment.var->lexeme, val);
+        env_assign(self->env, node->assignment.var->lexeme, val, scope);
         return val;
     case AST_UNARY:
         // token *op;

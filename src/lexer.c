@@ -192,6 +192,9 @@ static void scan_comment(lexer *self) {
     if (match(self, '-')) {
         while (peek(self) != '\n' && !is_at_end(self))
             advance(self);
+        if (is_at_end(self)) {
+            self->current--;
+        }
     } else {
         add_token(self, MINUS, NULL);
     }

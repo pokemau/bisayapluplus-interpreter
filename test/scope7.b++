@@ -1,0 +1,10 @@
+SUGOD
+MUGNA NUMERO count=0
+KUNG (count == 0)
+PUNDOK{
+    MUGNA NUMERO count=10
+    IPAKITA: count & $
+}
+count = count + 1
+IPAKITA: count
+KATAPUSAN

@@ -1,0 +1,9 @@
+SUGOD
+    MUGNA NUMERO x=10
+    KUNG (x == 10)
+    PUNDOK{
+        MUGNA NUMERO x=20
+        IPAKITA: x & $
+    }
+    IPAKITA: x
+KATAPUSAN
