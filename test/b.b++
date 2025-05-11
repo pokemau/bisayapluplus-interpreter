@@ -1,9 +1,0 @@
-SUGOD
-
-    MUGNA NUMERO ctr
-    ALANG SA (ctr = 10, ctr > 0, ctr = ctr - 1)
-    PUNDOK {
-        IPAKITA: ctr & $
-    }
-
-KATAPUSAN
