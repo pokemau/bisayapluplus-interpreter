@@ -121,6 +121,11 @@ static void scan_char(lexer *self) {
         advance(self);
         return;
     }
+    else {
+        add_token(self, SINGLE_QUOTE, NULL);
+        return;
+    }
+
     lexer_error(self, "Unterminated or Invalid Char!");
 }
 
@@ -139,12 +144,12 @@ static void scan_input_string(lexer *self) {
             break;
     }
     text[i+1] = '\0';
-    
+
     self->start--;
 
     // Remove surrounding quotes
     int len = strlen(text);
-    if (len >= 2 && 
+    if (len >= 2 &&
         (text[0] == '\'' || text[0] == '\"') && 
         (text[len - 1] == '\'' || text[len - 1] == '\"')) {
 
@@ -153,7 +158,6 @@ static void scan_input_string(lexer *self) {
             memmove(text, text + 1, len - 1);
             // Null-terminate the string to remove the last quote
             text[len - 2] = '\0';
-            
 
             if (singleQuote) {
                 if (strlen(text) > 1){
@@ -176,7 +180,6 @@ static void scan_input_string(lexer *self) {
     }
 
 
-    // might remove later if the feature of user input TINUOD is not a thing
     if (strcmp(text, "OO") == 0) {
         add_token(self, TRUE, NULL);
     } else if (strcmp(text, "DILI") == 0) {
@@ -429,5 +432,4 @@ void lexer_gen_input_tokens(lexer *self) {
                 }
         }
     }
-    // print_tokens(self);
 }
