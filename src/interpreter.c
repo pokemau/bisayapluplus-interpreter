@@ -206,7 +206,6 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
             string_len++;
         }
-        // printf("string len: %d\n", string_len);
         if (node->input.var_count != expression_count) {
             char error_message[100];
             sprintf(error_message,
@@ -237,8 +236,6 @@ static void execute_statement(interpreter *self, ast_node *node) {
             val = evaluate(self, sub_ast_nodes[i]);
             value_type variable_type =
                 env_get_variable_type(self->env, node->input.vars[i].lexeme);
-            // printf("Variable %s datatype: %s\n", node->input.vars[i].lexeme,
-            // get_string_from_value_type(variable_type));
             if (!(val.type == VAL_LETRA && variable_type == VAL_LETRA) &&
                 !(val.type == VAL_TIPIK && variable_type == VAL_TIPIK) &&
                 !(val.type == VAL_NUMERO && variable_type == VAL_NUMERO) &&
@@ -255,8 +252,6 @@ static void execute_statement(interpreter *self, ast_node *node) {
             }
             env_assign(self->env, node->input.vars[i].lexeme, val);
         }
-
-        // token_list *sub_lexer_tokens = &sub_lexer.tokens;
 
         break;
 
@@ -383,8 +378,6 @@ static value evaluate(interpreter *self, ast_node *node) {
         env_assign(self->env, node->assignment.var->lexeme, val);
         return val;
     case AST_UNARY:
-        // token *op;
-        // ast_node *expr;
         val = evaluate(self, node->unary.expr);
         switch (node->unary.op->type) {
         case MINUS:

@@ -10,10 +10,6 @@ typedef struct interpreter {
     arena *arena;
 } interpreter;
 
-
-// if ma true kay exit (?)
-extern bool interp_has_error;
-
 interpreter *interp_create(arena *arena);
 
 void interp_free(interpreter *self);

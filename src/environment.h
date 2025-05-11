@@ -12,7 +12,6 @@ struct env_elem {
     env_elem *next;
 };
 
-// lenked lest
 typedef struct environment environment;
 struct environment {
     env_elem *list;

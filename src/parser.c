@@ -2,7 +2,6 @@
 #include "ast.h"
 #include "token.h"
 #include "util/arena.h"
-#include "util/dyn_arr.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -50,8 +49,6 @@ parser parser_create(token_list *tokens, arena *arena) {
 
 static void parser_error(parser *self, const char *message) {
     token *current = &self->tokens->list[self->current];
-    // fprintf(stderr, "Syntax Error at line %d: %s\n", current->line, message);
-    //    exit(1);
     add_error(self->error_list, SYNTAX_ERROR, current->line, message);
 }
 
@@ -103,12 +100,8 @@ static bool match(parser *self, TokenType type) {
 
 static ast_node *parse_statement(parser *self) {
     token *t = peek(self);
-    //    printf("CURR TOKEN:::::");
-    //    print_token(t);
 
     ast_node *res = NULL;
-
-    // printf("Statement start: %s\n", peek(self)->lexeme);
 
     if (match(self, MUGNA)) {
         res = parse_var_decl(self);
@@ -129,33 +122,24 @@ static ast_node *parse_statement(parser *self) {
             advance(self);
         return NULL;
     } else {
-        /*printf("ELSE::::::::");*/
-        /*parser_curr(self);*/
         char* buf = arena_alloc(self->arena, sizeof(char) * 128);
         snprintf(buf, 128, "Unexpected token '%s' in statement",
                  peek(self)->lexeme);
         parser_error(self, buf);
     }
 
-    // printf("Statement ends: %s\n", peek(self)->lexeme);
-
     if (!res) {
-        /*printf("SYNCHRONIZE\n");*/
         synchronize(self);
-        /*printf("AFTER SYNC:::::::");*/
-        /*parser_curr(self);*/
         return NULL;
     }
     return res;
 }
 
 static ast_node *parse_var_decl(parser *self) {
-    /*printf("=============PARSE VAR DECL=============\n");*/
     advance(self);
     token* datatype = advance(self);
     const char* decl_datatype = datatype->lexeme;
 
-    // Now looking (peeking) at token after "MUGNA"
     if (strcmp(decl_datatype, "NUMERO") != 0 && strcmp(decl_datatype, "LETRA") != 0 && 
         strcmp(decl_datatype, "TINUOD") != 0 && strcmp(decl_datatype, "TIPIK") != 0) {
         parser_error(self, "(MUGNA) Expected data type after 'MUGNA' during variable declaration");
@@ -163,7 +147,6 @@ static ast_node *parse_var_decl(parser *self) {
     }
     TokenType d_type = datatype->type;
 
-    // TODO: implement allocator functions
     int temp_size = 10;
     token *names = arena_alloc(self->arena, sizeof(token) * temp_size);
     ast_node **inits = arena_alloc(self->arena, sizeof(ast_node *) * temp_size);
@@ -176,9 +159,6 @@ static ast_node *parse_var_decl(parser *self) {
             sprintf(buf, "(MUGNA) Expected variable name after data type during variable declaration but instead got [%s]", 
                 get_string_from_token_type(name->type));
             parser_error(self, buf);
-            // Commented these below because these causes the program to crash
-            // free(names);
-            // free(inits);
             return NULL;
         }
 
@@ -190,9 +170,6 @@ static ast_node *parse_var_decl(parser *self) {
             init = parse_expression(self);
             if (!init) {
                 parser_error(self, "(MUGNA) Expected expression after '='");
-                // Commented these below because these causes the program to crash
-                // free(names);
-                // free(inits);
                 return NULL;
             }
         }
@@ -215,9 +192,6 @@ static ast_node *parse_var_decl(parser *self) {
         if (match(self, COMMA)) {
             if (peek_next(self)->type != IDENTIFIER) {
                 parser_error(self, "(MUGNA) Expected a variable name after ','");
-                // Commented these below because these causes the program to crash
-                // free(names);
-                // free(inits);
                 return NULL;
             }
             advance(self);
@@ -229,9 +203,6 @@ static ast_node *parse_var_decl(parser *self) {
         return NULL;
     }
 
-    /*names = realloc(names, sizeof(token) * name_count);*/
-    /*inits = realloc(inits, sizeof(ast_node *) * name_count);*/
-
     expect(self, NEWLINE, "(MUGNA) Expected: statement in new line");
     ast_node *decl = ast_new_node(self->arena, AST_VAR_DECL);
     decl->var_decl.names = names;
@@ -241,25 +212,20 @@ static ast_node *parse_var_decl(parser *self) {
     return decl;
 }
 
-// if something breaks, my changes might be the cause
-// comment the ones with comments in case
-// why changed: when writing a line that starts with unfamiliar token, the program skips it and finds the next line that starts with a familiar token
 static void synchronize(parser *self) {
-    if (peek(self)->type == NEWLINE) {  //
-        advance(self);                  //
-        return;                         //
-    }                                   //      
+    if (peek(self)->type == NEWLINE) {
+        advance(self);
+        return;
+    }
 
     if (peek_next(self))
         advance(self);
     else
         return;
 
-    while (!is_at_end(self) && peek_prev(self)->type != NEWLINE) {          // remove 2nd condition
+    while (!is_at_end(self) && peek_prev(self)->type != NEWLINE) {
         token *curr = peek(self);
         switch (curr->type) {
-            // case RIGHT_BRACE:
-            // case KATAPUSAN:
 
         case MUGNA:
         case IPAKITA:
@@ -279,7 +245,6 @@ static void parser_curr(parser *self) {
 }
 
 static ast_node *parse_assignment(parser *self) {
-    /*printf("=============PARSE ASSIGNMENT=============\n");*/
     token *var_name = advance(self);
 
     ast_node *expr = NULL;
@@ -288,7 +253,6 @@ static ast_node *parse_assignment(parser *self) {
         token *signToken = advance(self);
         ast_node *left = ast_new_node(self->arena, AST_VARIABLE);
         left->variable.name = var_name;
-        // printf("Current token: %s\n", peek(self)->lexeme);
         ast_node *right;
 
         if (match(self, EQUAL)) { // i+=1, i-=1
@@ -346,18 +310,14 @@ static ast_node *parse_assignment(parser *self) {
         return NULL;
     }
 
-    /*parser_curr(self);*/
-
     ast_node *assign = ast_new_node(self->arena, AST_ASSIGNMENT);
     assign->assignment.expr = expr;
     assign->assignment.var = var_name;
 
-    // printf("Value: %s\n", assign->assignment.expr->binary.right->literal.value->lexeme);
     return assign;
 }
 
 static ast_node *parse_print_stmt(parser *self) {
-    /*printf("=============PARSE IPAKITA=============\n");*/
     advance(self);
     if (!expect(self, COLON, "(IPAKITA) Expected ':' after 'IPAKITA'"))
         return NULL;
@@ -367,7 +327,6 @@ static ast_node *parse_print_stmt(parser *self) {
     int expr_count = 0;
 
     while (!match(self, NEWLINE)) {
-        // added STRING datatype here but might not work
         ast_node *expr = parse_expression(self);
         if (!expr) {
             // free(exprs);
@@ -395,12 +354,8 @@ static ast_node *parse_print_stmt(parser *self) {
         }
     }
 
-    // printf("PRINT::::::::::::::");
-    // parser_curr(self);
-
     if (peek_prev(self)->type == AMPERSAND) {
         parser_error(self, "(IPAKITA) Expected expression after '&'");
-        // free(exprs);
         return NULL;
     }
 
@@ -492,9 +447,6 @@ static ast_node *parse_block(parser *self) {
 
 
     if (!found) {
-        // TODO:
-        // improve ang error message sa PUNDOK nga error
-        // not necessary
         parser_error(self, "(PUNDOK) Expected: '}' to close 'PUNDOK'");
         return NULL;
     }
@@ -503,7 +455,6 @@ static ast_node *parse_block(parser *self) {
     while (match(self, NEWLINE)) {
         advance(self);
     }
-    // expect(self, NEWLINE, "Expected: Next statement in new line");
 
     ast_node *block = ast_new_node(self->arena, AST_BLOCK);
     if (stmts) {
@@ -511,15 +462,12 @@ static ast_node *parse_block(parser *self) {
         for (int i = 0; i < stmt_count; i++) {
             block->block.statements[i] = stmts[i];
         }
-        // block->block.statements = *stmts;
     }
     block->block.stmt_count = stmt_count;
     return block;
 }
 
-// Parse 'switch' statement: PULI(expr) KASO{val}: PUNDOK{ ... }
 static ast_node *parse_switch_stmt(parser *self) {
-    // consume 'PULI'
     advance(self);
     if (!expect(self, LEFT_PAREN, "(PULI) Expected '(' after 'PULI'")) return NULL;
     ast_node *expr = parse_expression(self);
@@ -567,11 +515,7 @@ static ast_node *parse_switch_stmt(parser *self) {
 }
 
 static ast_node *parse_if_stmt(parser *self) {
-    /*printf("=============PARSE IF STMT=============\n");*/
-
     advance(self);
-
-    // printf("Current token: %s\n", peek(self)->lexeme);
 
     if (!expect(self, LEFT_PAREN, "Expected '(' after 'KUNG'"))
         return NULL;
@@ -587,8 +531,6 @@ static ast_node *parse_if_stmt(parser *self) {
     while (match(self, NEWLINE)) {
         advance(self);
     }
-    // if (!expect(self, NEWLINE, "Expected 'PUNDOK' in new line"))
-    //     return NULL;
 
     ast_node *then_block = parse_block(self);
     if (!then_block) {
@@ -598,12 +540,6 @@ static ast_node *parse_if_stmt(parser *self) {
     ast_node *if_stmt = ast_new_node(self->arena, AST_IF);
     if_stmt->if_stmt.condition = condition;
     if_stmt->if_stmt.then_block = then_block;
-
-    //    if (!expect(self, NEWLINE, "Expected: Statement in new line[here]")) {
-    //        // TODO: implement free node for this ast_node type
-    //        ast_free_node(if_stmt);
-    //        return NULL;
-    //    }
 
     if (match(self, KUNG_DILI) || match(self, KUNG_WALA)) {
         ast_node *else_stmt = parse_else_stmt(self);
@@ -618,7 +554,6 @@ static ast_node *parse_if_stmt(parser *self) {
 
 static ast_node *parse_else_stmt(parser *self) {
     if (match(self, KUNG_DILI)) {
-        /*printf("=============PARSE ELSE IF STMT=============\n");*/
         advance(self);
         if (!expect(self, LEFT_PAREN, "Expected: '(' after 'KUNG DILI'"))
             return NULL;
@@ -634,9 +569,6 @@ static ast_node *parse_else_stmt(parser *self) {
         while (match(self, NEWLINE)) {
             advance(self);
         }
-        // if (!expect(self, NEWLINE, "Expected: statement in new line")) {
-        //     return NULL;
-        // }
 
         ast_node *then_block = parse_block(self);
         if (!then_block)
@@ -652,13 +584,10 @@ static ast_node *parse_else_stmt(parser *self) {
         return stmt;
 
     } else if (match(self, KUNG_WALA)) {
-        /*printf("=============PARSE ELSE=============\n");*/
         advance(self);
         while (match(self, NEWLINE)) {
             advance(self);
         }
-        // if (!expect(self, NEWLINE, "Expected 'PUNDOK' in new line"))
-        //     return NULL;
 
         ast_node *block = parse_block(self);
         if (!block) {
@@ -720,8 +649,6 @@ static ast_node *parse_for_stmt(parser *self) {
     while (match(self, NEWLINE)) {
         advance(self);
     }
-    // if (!expect(self, NEWLINE, "Expected 'PUNDOK' in new line"))
-    //     return NULL;
 
     ast_node *body = parse_block(self);
 
@@ -825,38 +752,13 @@ static ast_node *parse_primary(parser *self) {
                 res->literal.value = peek_prev(self);
                 advance(self);
 
-                /*printf("AFTER:::::::::");*/
-                /*parser_curr(self);*/
                 return res;
             }
-            // parser_curr(self);
             advance(self);
         }
         parser_error(self, "(Expression) Expected: ']' after '['");
         return NULL;
-
-        //        if (match(self, RIGHT_BRACKET)) {
-        //            advance(self);
-        //            ast_node *literal = ast_new_node(AST_LITERAL);
-        //            literal->literal.value = malloc(sizeof(token));
-        //            literal->literal.value->type = STRING;
-        //            literal->literal.value->lexeme = "";
-        //            literal->literal.value->line = t->line;
-        //            return literal;
-        //        } else {
-        //            ast_node *expr = parse_expression(self);
-        //            expect(self, RIGHT_BRACKET, "Expected: ']' after
-        //            expression"); return expr;
-        //        }
-        //        expect(self, RIGHT_BRACKET, "Expected ']' after '#'");
-        //        ast_node *literal = ast_new_node(AST_LITERAL);
-        //        literal->literal.value = malloc(sizeof(token));
-        //        literal->literal.value->type = HASH;
-        //        literal->literal.value->lexeme = "#";
-        //        literal->literal.value->line = t->line;
-        //        return literal;
     } else if (match(self, DOLLAR)) {
-        /*printf("DOLLAR\n");*/
         advance(self);
         ast_node *literal = ast_new_node(self->arena, AST_LITERAL);
         literal->literal.value = malloc(sizeof(token));
@@ -866,8 +768,6 @@ static ast_node *parse_primary(parser *self) {
         return literal;
     }
 
-    // Commented this because the error message might be on the var_decl function
-    // parser_error(self, "Expected expression");
     return NULL;
 }
 
@@ -895,7 +795,6 @@ ast_node *parser_parse(parser *self) {
     ast_node *stmts = arena_alloc(self->arena,
                                   sizeof(ast_node) * temp_size);
     int stmt_count = 0;
-    /*ast_node *stmts = dynarray_create(ast_node);*/
 
     while (!is_at_end(self)) {
 
@@ -915,11 +814,6 @@ ast_node *parser_parse(parser *self) {
             stmts = n;
         }
     }
-
-    // TODO:
-    // parse ipakita
-    // parse dawat
-    // parse var_decl types LETRA, TINUOD
 
     previous(self);
     if (!match(self, KATAPUSAN)) {
