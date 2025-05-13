@@ -54,6 +54,8 @@ void initialize_token_hashmap(arena* arena) {
     hashmap_put_string(hm_tokentype_to_string, (size_t)AMPERSAND, "AMPERSAND");
     hashmap_put_string(hm_tokentype_to_string, (size_t)DOLLAR, "DOLLAR");
     hashmap_put_string(hm_tokentype_to_string, (size_t)HASH, "HASH");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)SINGLE_QUOTE, "SINGLE_QUOTE");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)DOUBLE_QUOTE, "DOUBLE_QUOTE");
     hashmap_put_string(hm_tokentype_to_string, (size_t)NEWLINE, "NEWLINE");
     hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_PAREN, "LEFT_PAREN");
     hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_PAREN, "RIGHT_PAREN");

@@ -3,5 +3,5 @@
 cmake -S . -B build
 cmake --build build
 
-./build/bisaya++ ./test/b.b++
+./build/bisaya++ ./tests/b.b++
 

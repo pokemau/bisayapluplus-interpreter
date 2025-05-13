@@ -86,12 +86,16 @@ static void add_token(lexer *self, TokenType type, void *literal) {
 }
 
 static void scan_string(lexer *self) {
+    int prev_curr = self->current;
+
     while(peek(self) != '"' && !is_at_end(self) && peek_next(self) != '\n') {
         advance(self);
     }
 
     if ((peek(self) != '"' && peek_next(self) == '\n') || is_at_end(self)) {
-        lexer_error(self, "Unterminated String!");
+        self->current = prev_curr;
+        add_token(self, DOUBLE_QUOTE, NULL);
+        return;
     }
 
     const char *text = get_token_substring(self,
@@ -371,7 +375,7 @@ void lexer_gen_tokens(lexer *self) {
         self->start = self->current;
     }
 
-    // print_tokens(self);
+    print_tokens(self);
 }
 
 void lexer_gen_input_tokens(lexer *self) {

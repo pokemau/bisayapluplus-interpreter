@@ -68,8 +68,6 @@ typedef enum TokenType {
     // EOF
     EOFILE,
 
-//    INCREMENT,
-//    DECREMENT,
 } TokenType;
 
 static const char *token_val[] = {
