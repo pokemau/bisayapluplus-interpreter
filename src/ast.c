@@ -1,17 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "ast.h"
 #include "util.h"
 #include "util/dyn_arr.h"
-#include <stdlib.h>
-#include <stdio.h>
 
-ast_node *ast_new_node(arena *arena, ast_node_type type) {
+ast_node* ast_new_node(arena* arena, ast_node_type type) {
     /*ast_node *node = (ast_node *)malloc(sizeof(ast_node));*/
-    ast_node *node = arena_alloc(arena, sizeof(ast_node));
+    ast_node* node = arena_alloc(arena, sizeof(ast_node));
     node->type = type;
     return node;
 }
 
-void ast_free_node(ast_node *node) {
+void ast_free_node(ast_node* node) {
     if (!node) {
         fprintf(stderr, "Node is NULL [ast_free_node]");
         return;

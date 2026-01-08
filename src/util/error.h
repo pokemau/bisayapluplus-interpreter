@@ -5,7 +5,7 @@
 
 #define INITIAL_ERROR_CAPACITY 16
 
-typedef enum ErrorType{
+typedef enum ErrorType {
     LEXICAL_ERROR,
     SYNTAX_ERROR,
     SEMANTIC_ERROR,
@@ -14,12 +14,12 @@ typedef enum ErrorType{
 typedef struct {
     ErrorType type;
     int line;
-    const char *message;
+    const char* message;
 } error;
 
 typedef struct {
     arena* arena;
-    error *errors;
+    error* errors;
     size_t error_count;
     size_t max_count;
 } error_list;

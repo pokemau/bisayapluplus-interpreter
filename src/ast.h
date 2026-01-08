@@ -35,79 +35,79 @@ struct ast_node {
     union {
 
         struct {
-            ast_node *statements;
+            ast_node* statements;
             int stmt_count;
         } program;
 
         struct {
             TokenType d_type;
-            token *names;
-            ast_node **inits;
+            token* names;
+            ast_node** inits;
             int name_count;
         } var_decl;
 
         struct {
-            token *var;
-            ast_node *expr;
+            token* var;
+            ast_node* expr;
         } assignment;
 
         struct {
-            ast_node **exprs;
+            ast_node** exprs;
             int expr_count;
         } print;
 
         struct {
-            token *vars;
+            token* vars;
             int var_count;
         } input;
 
         struct {
-            ast_node *condition;
-            ast_node *then_block;
-            ast_node *else_block;
+            ast_node* condition;
+            ast_node* then_block;
+            ast_node* else_block;
         } if_stmt;
 
         struct {
-            ast_node *init;
-            ast_node *condition;
-            ast_node *update;
-            ast_node *body;
+            ast_node* init;
+            ast_node* condition;
+            ast_node* update;
+            ast_node* body;
         } for_stmt;
-        
+
         struct {
-            ast_node *expr;          // switch expression
-            ast_node **case_values;   // array of case literal expressions
-            ast_node **case_blocks;   // array of blocks for each case
+            ast_node* expr;         // switch expression
+            ast_node** case_values; // array of case literal expressions
+            ast_node** case_blocks; // array of blocks for each case
             int case_count;
         } switch_stmt;
 
         struct {
-            ast_node **statements;
+            ast_node** statements;
             int stmt_count;
         } block;
 
         struct {
-            ast_node *left;
-            token *op;
-            ast_node *right;
+            ast_node* left;
+            token* op;
+            ast_node* right;
         } binary;
 
         struct {
-            token *op;
-            ast_node *expr;
+            token* op;
+            ast_node* expr;
         } unary;
 
         struct {
-            token *value;
+            token* value;
         } literal;
 
         struct {
-            token *name;
+            token* name;
         } variable;
     };
 };
 
-ast_node *ast_new_node(arena *arena, ast_node_type type);
-void ast_free_node(ast_node *node);
+ast_node* ast_new_node(arena* arena, ast_node_type type);
+void ast_free_node(ast_node* node);
 
 #endif

@@ -26,16 +26,16 @@ typedef enum Hashmap_Type {
 
 typedef struct hashmap {
     size_t size;
-    hashmap_entry **entries;
+    hashmap_entry** entries;
     arena* arena;
     Hashmap_Type type;
 } hashmap;
 
-hashmap *create_hashmap(const size_t size, arena *arena, Hashmap_Type type);
-void hashmap_put_enum(hashmap *self, const char *key, const size_t value);
-void hashmap_put_string(hashmap *self, const size_t key, const char *value);
-size_t hashmap_get_enum(hashmap *self, const char *key);
-char *hashmap_get_string(hashmap *self, const size_t key);
-void print_hashmap(hashmap *self);
+hashmap* create_hashmap(const size_t size, arena* arena, Hashmap_Type type);
+void hashmap_put_enum(hashmap* self, const char* key, const size_t value);
+void hashmap_put_string(hashmap* self, const size_t key, const char* value);
+size_t hashmap_get_enum(hashmap* self, const char* key);
+char* hashmap_get_string(hashmap* self, const size_t key);
+void print_hashmap(hashmap* self);
 
 #endif

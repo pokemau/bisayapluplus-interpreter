@@ -1,5 +1,6 @@
-#include "parser.h"
 #include <stdio.h>
+
+#include "parser.h"
 
 // Helper function to print indentation
 static void print_indent(int depth) {
@@ -9,7 +10,7 @@ static void print_indent(int depth) {
 }
 
 // Function to print the AST
-void ast_print(ast_node *node, int depth) {
+void ast_print(ast_node* node, int depth) {
     if (!node) {
         print_indent(depth);
         printf("<null>\n");

@@ -9,13 +9,13 @@
 
 typedef struct lexer_src {
     long len;
-    const char *data;
+    const char* data;
 } lexer_src;
 
 typedef struct token_list {
     long size;
     long max;
-    token *list;
+    token* list;
 } token_list;
 
 typedef struct lexer {
@@ -25,11 +25,11 @@ typedef struct lexer {
     int current;
     int line;
     arena arena;
-    error_list *error_list;
+    error_list* error_list;
 } lexer;
 
-lexer lexer_create(lexer_src *source);
-void lexer_gen_tokens(lexer *self);
-void lexer_gen_input_tokens(lexer *self);
+lexer lexer_create(lexer_src* source);
+void lexer_gen_tokens(lexer* self);
+void lexer_gen_input_tokens(lexer* self);
 
 #endif

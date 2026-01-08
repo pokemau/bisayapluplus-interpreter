@@ -1,15 +1,15 @@
-#include "token.h"
-
-#include "util/hashmap.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "token.h"
+#include "util/hashmap.h"
 
 hashmap* hm_string_to_tokentype;
 hashmap* hm_tokentype_to_string;
 
 void initialize_token_hashmap(arena* arena) {
     // size 19 * 4, more space for the table, less collisions
-    hm_string_to_tokentype = create_hashmap(19*4, arena, STRING_TO_ENUM);
+    hm_string_to_tokentype = create_hashmap(19 * 4, arena, STRING_TO_ENUM);
     hashmap_put_enum(hm_string_to_tokentype, "IDENTIFIER", (size_t)IDENTIFIER);
     hashmap_put_enum(hm_string_to_tokentype, "UG", (size_t)UG);
     hashmap_put_enum(hm_string_to_tokentype, "O", (size_t)O);
@@ -42,10 +42,14 @@ void initialize_token_hashmap(arena* arena) {
     hashmap_put_string(hm_tokentype_to_string, (size_t)NUMERO, "NUMERO");
     hashmap_put_string(hm_tokentype_to_string, (size_t)TINUOD, "TINUOD");
 
-    hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_BRACE, "LEFT_BRACE");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_BRACE, "RIGHT_BRACE");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_BRACKET, "LEFT_BRACKET");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_BRACKET, "RIGHT_BRACKET");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_BRACE,
+                       "LEFT_BRACE");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_BRACE,
+                       "RIGHT_BRACE");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_BRACKET,
+                       "LEFT_BRACKET");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_BRACKET,
+                       "RIGHT_BRACKET");
     hashmap_put_string(hm_tokentype_to_string, (size_t)COMMA, "COMMA");
     hashmap_put_string(hm_tokentype_to_string, (size_t)DOT, "DOT");
     hashmap_put_string(hm_tokentype_to_string, (size_t)SEMICOLON, "SEMICOLON");
@@ -54,11 +58,15 @@ void initialize_token_hashmap(arena* arena) {
     hashmap_put_string(hm_tokentype_to_string, (size_t)AMPERSAND, "AMPERSAND");
     hashmap_put_string(hm_tokentype_to_string, (size_t)DOLLAR, "DOLLAR");
     hashmap_put_string(hm_tokentype_to_string, (size_t)HASH, "HASH");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)SINGLE_QUOTE, "SINGLE_QUOTE");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)DOUBLE_QUOTE, "DOUBLE_QUOTE");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)SINGLE_QUOTE,
+                       "SINGLE_QUOTE");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)DOUBLE_QUOTE,
+                       "DOUBLE_QUOTE");
     hashmap_put_string(hm_tokentype_to_string, (size_t)NEWLINE, "NEWLINE");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_PAREN, "LEFT_PAREN");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_PAREN, "RIGHT_PAREN");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)LEFT_PAREN,
+                       "LEFT_PAREN");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)RIGHT_PAREN,
+                       "RIGHT_PAREN");
     hashmap_put_string(hm_tokentype_to_string, (size_t)STAR, "STAR");
     hashmap_put_string(hm_tokentype_to_string, (size_t)SLASH, "SLASH");
     hashmap_put_string(hm_tokentype_to_string, (size_t)MODULO, "MODULO");
@@ -66,16 +74,20 @@ void initialize_token_hashmap(arena* arena) {
     hashmap_put_string(hm_tokentype_to_string, (size_t)MINUS, "MINUS");
     hashmap_put_string(hm_tokentype_to_string, (size_t)GREATER, "GREATER");
     hashmap_put_string(hm_tokentype_to_string, (size_t)LESS, "LESS");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)GREATER_EQUAL, "GREATER_EQUAL");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)LESS_EQUAL, "LESS_EQUAL");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)EQUAL_EQUAL, "EQUAL_EQUAL");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)GREATER_EQUAL,
+                       "GREATER_EQUAL");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)LESS_EQUAL,
+                       "LESS_EQUAL");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)EQUAL_EQUAL,
+                       "EQUAL_EQUAL");
     hashmap_put_string(hm_tokentype_to_string, (size_t)NOT_EQUAL, "NOT_EQUAL");
     hashmap_put_string(hm_tokentype_to_string, (size_t)UG, "UG");
     hashmap_put_string(hm_tokentype_to_string, (size_t)O, "O");
     hashmap_put_string(hm_tokentype_to_string, (size_t)DILI, "DILI");
     hashmap_put_string(hm_tokentype_to_string, (size_t)TRUE, "TRUE");
     hashmap_put_string(hm_tokentype_to_string, (size_t)FALSE, "FALSE");
-    hashmap_put_string(hm_tokentype_to_string, (size_t)IDENTIFIER, "IDENTIFIER");
+    hashmap_put_string(hm_tokentype_to_string, (size_t)IDENTIFIER,
+                       "IDENTIFIER");
     hashmap_put_string(hm_tokentype_to_string, (size_t)STRING, "STRING");
     hashmap_put_string(hm_tokentype_to_string, (size_t)CHAR, "CHAR");
     hashmap_put_string(hm_tokentype_to_string, (size_t)NUMBER, "NUMBER");
@@ -96,11 +108,11 @@ void initialize_token_hashmap(arena* arena) {
     // print_hashmap(hm_tokentype_to_string);
 }
 
-void print_token(token *t) {
+void print_token(token* t) {
     printf("[%d] %-20s %s\n", t->line, token_val[t->type], t->lexeme);
 }
 
-TokenType get_token_type(const char *s) {
+TokenType get_token_type(const char* s) {
     return (TokenType)hashmap_get_enum(hm_string_to_tokentype, s);
 }
 

@@ -1,8 +1,9 @@
 #ifndef _VALUE_H_
 #define _VALUE_H_
 
-#include "token.h"
 #include <stdbool.h>
+
+#include "token.h"
 
 typedef enum {
     VAL_NUMERO,

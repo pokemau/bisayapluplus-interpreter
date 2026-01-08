@@ -1,42 +1,42 @@
-#include "interpreter.h"
-#include "ast.h"
-#include "environment.h"
-#include "parser.h"
-#include "token.h"
-#include "value.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "ast.h"
+#include "environment.h"
+#include "interpreter.h"
+#include "parser.h"
+#include "token.h"
+#include "value.h"
+
 static int count = 0;
 
-static value evaluate(interpreter *self, ast_node *node);
-static void execute_statement(interpreter *self, ast_node *node);
+static value evaluate(interpreter* self, ast_node* node);
+static void execute_statement(interpreter* self, ast_node* node);
 
-static void interp_error(int line, const char *msg) {
+static void interp_error(int line, const char* msg) {
     fprintf(stderr, "Semantic Error at Line [%d]: %s\n", line, msg);
     exit(1);
 }
 
-interpreter *interp_create(arena *arena) {
-    interpreter *self = arena_alloc(arena, sizeof(interpreter));
+interpreter* interp_create(arena* arena) {
+    interpreter* self = arena_alloc(arena, sizeof(interpreter));
     self->env = env_create(NULL, arena);
     self->arena = arena;
     return self;
 }
 
-void interp_free(interpreter *self) {
-    environment *env = self->env;
+void interp_free(interpreter* self) {
+    environment* env = self->env;
     while (env) {
-        environment *parent = env->parent;
+        environment* parent = env->parent;
         env_free(env);
         env = parent;
     }
     free(self);
 }
 
-void interp_execute(interpreter *self, ast_node *node) {
+void interp_execute(interpreter* self, ast_node* node) {
     if (!node)
         return;
 
@@ -59,7 +59,7 @@ void interp_execute(interpreter *self, ast_node *node) {
     }
 }
 
-static void execute_statement(interpreter *self, ast_node *node) {
+static void execute_statement(interpreter* self, ast_node* node) {
     if (!node)
         return;
 
@@ -144,7 +144,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
     case AST_PRINT:
         count++;
         for (int i = 0; i < node->print.expr_count; i++) {
-            ast_node *curr = node->print.exprs[i];
+            ast_node* curr = node->print.exprs[i];
             if (curr->type == AST_LITERAL) {
                 if (curr->literal.value->type == DOLLAR) {
                     printf("\n");
@@ -177,7 +177,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
         break;
     case AST_INPUT:
         // 100 characters limit
-        char *input_string = arena_alloc(self->arena, 100);
+        char* input_string = arena_alloc(self->arena, 100);
         if (fgets(input_string, 100, stdin) != NULL) {
             // Remove the trailing newline character, if present
             size_t len = strlen(input_string);
@@ -224,7 +224,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
             return;
         }
         parser sub_parser = parser_create(&sub_lexer.tokens, self->arena);
-        ast_node **sub_ast_nodes =
+        ast_node** sub_ast_nodes =
             sub_parser_parse(&sub_parser, expression_count, node->input.vars);
         if (sub_parser.error_list->error_count > 0) {
             interp_error(node->input.vars[0].line,
@@ -336,7 +336,7 @@ static void execute_statement(interpreter *self, ast_node *node) {
     }
 }
 
-static value evaluate(interpreter *self, ast_node *node) {
+static value evaluate(interpreter* self, ast_node* node) {
     if (!node) {
         printf("(INTERPRETER: evaluate[1])Created a true null value...\n");
         return value_create_null(VAL_NULL);
@@ -351,12 +351,12 @@ static value evaluate(interpreter *self, ast_node *node) {
         case NUMBER:
             if (strchr(node->literal.value->lexeme, '.')) {
                 return value_create_tipik(
-                    *((double *)node->literal.value->literal));
+                    *((double*)node->literal.value->literal));
             }
             return value_create_numero(
-                *((double *)node->literal.value->literal));
+                *((double*)node->literal.value->literal));
         case CHAR:
-            return value_create_letra(*(char *)node->literal.value->literal);
+            return value_create_letra(*(char*)node->literal.value->literal);
         case TRUE:
             return value_create_tinuod(true);
         case FALSE:
